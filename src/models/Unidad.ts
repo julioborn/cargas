@@ -17,4 +17,4 @@ const UnidadSchema = new Schema<IUnidad>({
     },
 }, { collection: "unidades" }); // 🔹 Forzar nombre de la colección
 
-export default mongoose.models.Unidad || mongoose.model<IUnidad>("Unidad", UnidadSchema);
+export default mongoose.models.Unidad || mongoose.model<IUnidad>("Unidad", UnidadSchema, 'unidades');
