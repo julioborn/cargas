@@ -1,26 +1,43 @@
 import { NextResponse } from "next/server";
-import { connectMongoDB } from "@/lib/mongodb";
+import mongoose from "mongoose";
 import Orden from "@/models/Orden";
+import { connectMongoDB } from "@/lib/mongodb";
 
 export async function GET() {
     try {
         await connectMongoDB();
-        const ordenes = await Orden.find().populate("empresaId", "nombre email"); // Traer también datos de la empresa
-        return NextResponse.json({ ordenes }, { status: 200 });
+        const ordenes = await Orden.find().populate("unidadId choferId");
+        return NextResponse.json(ordenes);
     } catch (error) {
-        console.error("❌ Error obteniendo órdenes:", error);
-        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+        console.error("❌ Error al obtener órdenes:", error);
+        return NextResponse.json({ error: "Error al obtener órdenes" }, { status: 500 });
     }
 }
 
 export async function POST(req: Request) {
     try {
         await connectMongoDB();
-        const { empresaId, unidadId, litros, precioPorLitro } = await req.json();
-        const nuevaOrden = new Orden({ empresaId, unidadId, litros, precioPorLitro, estado: "pendiente" });
-        await nuevaOrden.save();
-        return NextResponse.json(nuevaOrden);
+        const body = await req.json();
+
+        // Validación básica
+        if (!body.unidadId || !body.choferId || !body.producto) {
+            return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+        }
+
+        const newOrden = new Orden({
+            fechaEmision: new Date(),
+            unidadId: new mongoose.Types.ObjectId(body.unidadId),
+            choferId: new mongoose.Types.ObjectId(body.choferId),
+            producto: body.producto,
+            litros: body.litros || null,
+            monto: body.monto || null,
+            estado: body.estado || "PENDIENTE_AUTORIZACION",
+        });
+
+        await newOrden.save();
+        return NextResponse.json(newOrden);
     } catch (error) {
-        return NextResponse.json({ error: "Error creando orden" }, { status: 500 });
+        console.error("❌ Error al crear orden:", error);
+        return NextResponse.json({ error: "Error al crear la orden" }, { status: 500 });
     }
 }

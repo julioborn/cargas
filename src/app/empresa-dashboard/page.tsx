@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { FiSettings } from "react-icons/fi";
 
 interface Empresa {
     _id: string;
@@ -20,50 +21,119 @@ interface Unidad {
     tipo: string;
 }
 
+interface Chofer {
+    _id: string;
+    empresaId: string;
+    nombre: string;
+    documento: string;
+}
+
+interface Orden {
+    _id: string;
+    fechaEmision: string;
+    fechaCarga?: string;
+    unidadId: string;
+    choferId: string;
+    producto: "GASOIL_G2" | "GASOIL_G3" | "NAFTA_SUPER" | "NAFTA_ECO";
+    litros?: number;
+    monto?: number;
+    estado: "PENDIENTE_AUTORIZACION" | "AUTORIZADA" | "PENDIENTE_CARGA" | "CARGA_FINALIZADA";
+    unidadMatricula?: string;
+    unidadTipo?: string;
+    choferNombre?: string;
+    choferDocumento?: string;
+}
+
 export default function EmpresaDashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const userId = session?.user?.id;
-
     const [empresa, setEmpresa] = useState<Empresa | null>(null);
     const [unidades, setUnidades] = useState<Unidad[]>([]);
+    const [choferes, setChoferes] = useState<Chofer[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [mensaje, setMensaje] = useState("");
+    const [menuAbierto, setMenuAbierto] = useState(false);
+    const [ordenes, setOrdenes] = useState<Orden[]>([]);
 
     useEffect(() => {
         if (!userId) return;
 
-        const fetchEmpresa = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch(`/api/empresas/usuario/${userId}`);
-                const data: Empresa | { error: string } = await res.json();
+                // 1️⃣ Obtener empresa
+                const resEmpresa = await fetch(`/api/empresas/usuario/${userId}`);
+                const dataEmpresa: Empresa | { error: string } = await resEmpresa.json();
 
-                if ("error" in data) {
-                    setMensaje(data.error);
-                } else {
-                    setEmpresa(data);
-                    fetchUnidades(data._id);
+                if ("error" in dataEmpresa) {
+                    setMensaje(dataEmpresa.error);
+                    return;
                 }
+                setEmpresa(dataEmpresa);
+
+                // 2️⃣ Obtener unidades
+                const resUnidades = await fetch(`/api/unidades`);
+                const dataUnidades: Unidad[] = await resUnidades.json();
+                const unidadesFiltradas = dataUnidades.filter((unidad) => unidad.empresaId === dataEmpresa._id);
+                setUnidades(unidadesFiltradas);
+
+                // 3️⃣ Obtener choferes
+                const resChoferes = await fetch(`/api/choferes`);
+                const dataChoferes: Chofer[] = await resChoferes.json();
+                const choferesFiltrados = dataChoferes.filter((chofer) => chofer.empresaId === dataEmpresa._id);
+                setChoferes(choferesFiltrados);
+
+                // 4️⃣ Obtener órdenes y enriquecer datos con unidades y choferes
+                const resOrdenes = await fetch(`/api/ordenes`);
+                const dataOrdenes: Orden[] = await resOrdenes.json();
+
+                if (!Array.isArray(dataOrdenes)) {
+                    console.error("❌ La API no devolvió un array en /api/ordenes", dataOrdenes);
+                    return;
+                }
+
+                const ordenesConDatos = dataOrdenes.map((orden) => {
+                    const unidad = unidadesFiltradas.find((u) => u._id === orden.unidadId);
+                    const chofer = choferesFiltrados.find((c) => c._id === orden.choferId);
+
+                    return {
+                        ...orden,
+                        unidadMatricula: unidad ? unidad.matricula : "Desconocida",
+                        unidadTipo: unidad ? unidad.tipo : "Desconocido",
+                        choferNombre: chofer ? chofer.nombre : "Desconocido",
+                        choferDocumento: chofer ? chofer.documento : "Desconocido",
+                    };
+                });
+
+                setOrdenes(ordenesConDatos);
             } catch (error) {
-                console.error("❌ Error obteniendo empresa:", error);
+                console.error("❌ Error obteniendo datos:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        const fetchUnidades = async (empresaId: string) => {
-            try {
-                const res = await fetch(`/api/unidades`);
-                const data: Unidad[] = await res.json();
-                setUnidades(data.filter((unidad) => unidad.empresaId === empresaId));
-            } catch (error) {
-                console.error("❌ Error obteniendo unidades:", error);
-            }
-        };
-
-        fetchEmpresa();
+        fetchData();
     }, [userId]);
 
+    if (status === "loading" || loading) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-900 text-red-500 text-lg">
+                No tienes una empresa registrada.
+            </div>
+        );
+    }
+
+    //Empresa
     const handleEditarEmpresa = async () => {
         if (!empresa) return;
 
@@ -102,7 +172,6 @@ export default function EmpresaDashboard() {
             }
         }
     };
-
     const handleEliminarEmpresa = async () => {
         if (!empresa) return;
 
@@ -131,54 +200,391 @@ export default function EmpresaDashboard() {
         }
     };
 
-    if (status === "loading" || loading) {
-        return <p className="text-center text-gray-600">Cargando...</p>;
-    }
+    //Unidad
+    const handleAgregarUnidad = async () => {
+        if (!empresa?._id) {
+            Swal.fire("Error", "No se encontró el ID de la empresa", "error");
+            return;
+        }
+
+        const { value } = await Swal.fire({
+            title: "Agregar Unidad",
+            html: `
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <input id="swal-matricula" class="swal2-input" placeholder="MATRÍCULA" style="width: 90%; text-transform: uppercase;">
+                    <select id="swal-tipo" class="swal2-input" style="width: 90%; text-transform: uppercase;">
+                        <option value="CAMION">CAMIÓN</option>
+                        <option value="COLECTIVO">COLECTIVO</option>
+                        <option value="UTILITARIO">UTILITARIO</option>
+                        <option value="AUTOMOVIL">AUTOMÓVIL</option>
+                        <option value="MOTO">MOTO</option>
+                    </select>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: "Agregar",
+            preConfirm: () => {
+                return {
+                    empresaId: empresa._id,
+                    matricula: (document.getElementById("swal-matricula") as HTMLInputElement).value.toUpperCase(),
+                    tipo: (document.getElementById("swal-tipo") as HTMLSelectElement).value.toUpperCase(),
+                };
+            },
+        });
+
+        if (value) {
+            const res = await fetch(`/api/unidades`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(value),
+            });
+
+            if (res.ok) {
+                Swal.fire("¡Agregada!", "Unidad registrada correctamente.", "success");
+                setUnidades([...unidades, value]); // Agrega la nueva unidad a la lista
+            } else {
+                Swal.fire("Error", "No se pudo registrar la unidad", "error");
+            }
+        }
+    };
+    const handleEditarUnidad = async (unidad: Unidad) => {
+        const { value } = await Swal.fire({
+            title: "Editar Unidad",
+            html: `
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <input id="swal-matricula" class="swal2-input" value="${unidad.matricula}" placeholder="MATRÍCULA" style="width: 90%; text-transform: uppercase;">
+                    <select id="swal-tipo" class="swal2-input" style="width: 90%; text-transform: uppercase;">
+                        <option value="CAMION" ${unidad.tipo.toUpperCase() === "CAMION" ? "selected" : ""}>CAMIÓN</option>
+                        <option value="COLECTIVO" ${unidad.tipo.toUpperCase() === "COLECTIVO" ? "selected" : ""}>COLECTIVO</option>
+                        <option value="UTILITARIO" ${unidad.tipo.toUpperCase() === "UTILITARIO" ? "selected" : ""}>UTILITARIO</option>
+                        <option value="AUTOMOVIL" ${unidad.tipo.toUpperCase() === "AUTOMOVIL" ? "selected" : ""}>AUTOMÓVIL</option>
+                        <option value="MOTO" ${unidad.tipo.toUpperCase() === "MOTO" ? "selected" : ""}>MOTO</option>
+                    </select>
+                </div>
+            `  ,
+            showCancelButton: true,
+            confirmButtonText: "Guardar cambios",
+            preConfirm: () => {
+                return {
+                    matricula: (document.getElementById("swal-matricula") as HTMLInputElement).value,
+                    tipo: (document.getElementById("swal-tipo") as HTMLSelectElement).value,
+                };
+            },
+        });
+
+        if (value) {
+            const res = await fetch(`/api/unidades/${unidad._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(value),
+            });
+
+            if (res.ok) {
+                Swal.fire("¡Actualizado!", "Unidad editada correctamente.", "success");
+                setUnidades(unidades.map((u) => (u._id === unidad._id ? { ...u, ...value } : u)));
+            } else {
+                Swal.fire("Error", "No se pudo actualizar la unidad", "error");
+            }
+        }
+    };
+    const handleEliminarUnidad = async (unidadId: string) => {
+        const confirmacion = await Swal.fire({
+            title: "¿Eliminar unidad?",
+            text: "Esta acción no se puede deshacer.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Sí, eliminar",
+        });
+
+        if (confirmacion.isConfirmed) {
+            const res = await fetch(`/api/unidades/${unidadId}`, {
+                method: "DELETE",
+            });
+
+            if (res.ok) {
+                Swal.fire("Eliminado", "La unidad ha sido eliminada.", "success");
+                setUnidades(unidades.filter((unidad) => unidad._id !== unidadId));
+            } else {
+                Swal.fire("Error", "No se pudo eliminar la unidad", "error");
+            }
+        }
+    };
+
+    //Chofer
+    const handleAgregarChofer = async () => {
+        if (!empresa?._id) {
+            Swal.fire("Error", "No se encontró el ID de la empresa", "error");
+            return;
+        }
+
+        const { value } = await Swal.fire({
+            title: "Agregar Chofer",
+            html: `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <input id="swal-nombre" class="swal2-input" placeholder="Nombre" style="width: 90%;">
+                <input id="swal-documento" class="swal2-input" placeholder="Documento" style="width: 90%;">
+            </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: "Agregar",
+            preConfirm: () => {
+                return {
+                    empresaId: empresa._id,
+                    nombre: (document.getElementById("swal-nombre") as HTMLInputElement).value,
+                    documento: (document.getElementById("swal-documento") as HTMLInputElement).value,
+                };
+            },
+        });
+
+        if (value) {
+            const res = await fetch(`/api/choferes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(value),
+            });
+
+            if (res.ok) {
+                Swal.fire("¡Agregado!", "Chofer registrado correctamente.", "success");
+                setChoferes([...choferes, value]); // Agrega el nuevo chofer a la lista
+            } else {
+                Swal.fire("Error", "No se pudo registrar el chofer", "error");
+            }
+        }
+    };
+    const handleEditarChofer = async (chofer: Chofer) => {
+        const { value } = await Swal.fire({
+            title: "Editar Chofer",
+            html: `
+                <input id="swal-nombre" class="swal2-input" value="${chofer.nombre}" placeholder="Nombre del Chofer">
+                <input id="swal-documento" class="swal2-input" value="${chofer.documento}" placeholder="Documento">
+            `,
+            showCancelButton: true,
+            confirmButtonText: "Guardar cambios",
+            preConfirm: () => {
+                return {
+                    nombre: (document.getElementById("swal-nombre") as HTMLInputElement).value,
+                    documento: (document.getElementById("swal-documento") as HTMLInputElement).value,
+                };
+            },
+        });
+
+        if (value) {
+            const res = await fetch(`/api/choferes/${chofer._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(value),
+            });
+
+            if (res.ok) {
+                Swal.fire("¡Actualizado!", "Chofer editado correctamente.", "success");
+                setChoferes(choferes.map((c) => (c._id === chofer._id ? { ...c, ...value } : c)));
+            } else {
+                Swal.fire("Error", "No se pudo actualizar el chofer", "error");
+            }
+        }
+    };
+    const handleEliminarChofer = async (choferId: string) => {
+        const confirmacion = await Swal.fire({
+            title: "¿Eliminar chofer?",
+            text: "Esta acción no se puede deshacer.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Sí, eliminar",
+        });
+
+        if (confirmacion.isConfirmed) {
+            const res = await fetch(`/api/choferes/${choferId}`, {
+                method: "DELETE",
+            });
+
+            if (res.ok) {
+                Swal.fire("Eliminado", "El chofer ha sido eliminado.", "success");
+                setChoferes(choferes.filter((chofer) => chofer._id !== choferId));
+            } else {
+                Swal.fire("Error", "No se pudo eliminar el chofer", "error");
+            }
+        }
+    };
+
+    //Orden
+    const handleCrearOrden = async () => {
+        const { value } = await Swal.fire({
+            title: "Crear Orden",
+            width: "450px", // 📏 Tamaño ajustado para evitar desbordes
+            html: `
+                <style>
+                    .swal2-popup {
+                        width: 450px !important; 
+                        padding: 20px !important;
+                        box-sizing: border-box !important;
+                    }
+                    .swal2-container {
+                        padding: 0 !important;
+                    }
+                    .swal2-grid {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 12px;
+                        justify-content: center;
+                        width: 100%;
+                    }
+                    .swal2-field {
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                    }
+                    .swal2-field label {
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    }
+                    .swal2-input, .swal2-select {
+                        width: 95% !important;
+                        height: 36px !important;
+                        font-size: 14px !important;
+                        padding: 5px;
+                        box-sizing: border-box !important;
+                        border-radius: 5px;
+                        border: 1px solid #ccc;
+                    }
+                </style>
+    
+                <div class="swal2-grid">
+                    <div class="swal2-field">
+                        <label>Unidad</label>
+                        <select id="swal-unidad" class="swal2-select">
+                            ${unidades.map((unidad) => `<option value="${unidad._id}">${unidad.matricula}</option>`).join("")}
+                        </select>
+                    </div>
+    
+                    <div class="swal2-field">
+                        <label>Chofer</label>
+                        <select id="swal-chofer" class="swal2-select">
+                            ${choferes.map((chofer) => `<option value="${chofer._id}">${chofer.nombre}</option>`).join("")}
+                        </select>
+                    </div>
+    
+                    <div class="swal2-field">
+                        <label>Producto</label>
+                        <select id="swal-producto" class="swal2-select">
+                            <option value="GASOIL_G2">Gasoil G2</option>
+                            <option value="GASOIL_G3">Gasoil G3</option>
+                            <option value="NAFTA_SUPER">Nafta Súper</option>
+                            <option value="NAFTA_ECO">Nafta Eco</option>
+                        </select>
+                    </div>
+    
+                    <div class="swal2-field">
+                        <label>Fecha de Carga</label>
+                        <input id="swal-fecha-carga" class="swal2-input" type="date">
+                    </div>
+    
+                    <div class="swal2-field">
+                        <label>Litros (Opcional)</label>
+                        <input id="swal-litros" class="swal2-input" type="number" placeholder="Cantidad de litros">
+                    </div>
+    
+                    <div class="swal2-field">
+                        <label>Monto (Opcional)</label>
+                        <input id="swal-monto" class="swal2-input" type="number" placeholder="Monto total">
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: "Registrar",
+            preConfirm: () => {
+                return {
+                    unidadId: (document.getElementById("swal-unidad") as HTMLSelectElement).value,
+                    choferId: (document.getElementById("swal-chofer") as HTMLSelectElement).value,
+                    producto: (document.getElementById("swal-producto") as HTMLSelectElement).value,
+                    litros: parseFloat((document.getElementById("swal-litros") as HTMLInputElement).value) || undefined,
+                    monto: parseFloat((document.getElementById("swal-monto") as HTMLInputElement).value) || undefined,
+                    fechaCarga: (document.getElementById("swal-fecha-carga") as HTMLInputElement).value || undefined,
+                };
+            }
+        });
+
+        if (value) {
+            console.log("Orden creada:", value);
+        }
+    };
+
+
+    const formatText = (text: string) => {
+        return text.replace(/_/g, " "); // Reemplaza los guiones bajos por espacios
+    };
+
 
     return (
         <div className="p-6">
             <h1 className="text-2xl text-white font-bold text-center mb-4">Datos de la Empresa</h1>
             {empresa ? (
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
-                    <strong className="text-xl text-gray-700">{empresa.nombre}</strong>
-                    <p className="text-gray-700 mt-2"><strong>RUC/CUIT:</strong> {empresa.ruc_cuit}</p>
-                    <p className="text-gray-700"><strong>Dirección:</strong> {empresa.direccion}</p>
-                    <p className="text-gray-700"><strong>Teléfono:</strong> {empresa.telefono}</p>
+                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto relative">
 
-                    <div className="mt-4 flex gap-4">
-                        <button onClick={handleEditarEmpresa} className="bg-yellow-500 text-white px-2 py-2 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                            </svg>
-                        </button>
-                        <button onClick={handleEliminarEmpresa} className="bg-red-500 text-white px-2 py-2 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                            </svg>
+                    {/* Datos de la Empresa */}
+                    <div>
+                        <strong className="text-xl text-gray-700">{empresa.nombre}</strong>
+                        <p className="text-gray-700 mt-2"><strong>RUC/CUIT:</strong> {empresa.ruc_cuit}</p>
+                        <p className="text-gray-700"><strong>Dirección:</strong> {empresa.direccion}</p>
+                        <p className="text-gray-700"><strong>Teléfono:</strong> {empresa.telefono}</p>
+                    </div>
+
+                    {/* Botón de Configuración */}
+                    <div className="absolute top-3 right-3">
+                        <button
+                            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300"
+                            onClick={() => setMenuAbierto(!menuAbierto)}
+                        >
+                            <FiSettings className="text-gray-700 text-lg" />
                         </button>
                     </div>
 
+                    {/* Menú de Configuración */}
+                    {menuAbierto && (
+                        <div className="absolute top-12 right-3 bg-white shadow-lg rounded-lg p-2">
+                            <button
+                                onClick={handleEditarEmpresa}
+                                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >
+                                Editar Empresa
+                            </button>
+                            <button
+                                onClick={handleEliminarEmpresa}
+                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                            >
+                                Eliminar Empresa
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Unidades */}
                     <div className="mt-6">
                         <h2 className="text-xl font-bold">Unidades</h2>
                         <button
-                            onClick={() => router.push("/registrar-unidad")}
+                            onClick={() => handleAgregarUnidad()}
                             className="mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"
                         >
                             + Agregar Unidad
                         </button>
                         <ul className="mt-4">
                             {unidades.map((unidad) => (
-                                <li key={unidad._id} className="border p-2 rounded mt-2 flex justify-between">
-                                    {unidad.matricula} - {unidad.tipo}
+                                <li key={unidad._id || unidad.matricula} className="border p-2 rounded mt-2 flex justify-between">
+                                    {unidad.tipo} - {unidad.matricula}
                                     <div className="flex gap-2">
-                                        <button onClick={() => handleEditarEmpresa()} className="bg-yellow-500 text-white px-2 py-1 rounded">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                        <button onClick={() => handleEditarUnidad(unidad)} className="bg-yellow-500 text-white px-2 py-1 rounded">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                             </svg>
                                         </button>
-                                        <button onClick={() => handleEliminarEmpresa()} className="bg-red-500 text-white px-2 py-1 rounded">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                        <button onClick={() => handleEliminarUnidad(unidad._id)} className="bg-red-500 text-white px-2 py-1 rounded">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                             </svg>
                                         </button>
                                     </div>
@@ -186,6 +592,62 @@ export default function EmpresaDashboard() {
                             ))}
                         </ul>
                     </div>
+
+                    {/* Choferes */}
+                    <div className="mt-6">
+                        <h2 className="text-xl font-bold">Choferes</h2>
+                        <button
+                            onClick={handleAgregarChofer}
+                            className="mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"
+                        >
+                            + Agregar Chofer
+                        </button>
+                        <ul className="mt-4">
+                            {choferes.map((chofer) => (
+                                <li key={chofer._id} className="border p-2 rounded mt-2 flex justify-between">
+                                    {chofer.nombre.toUpperCase()} - {chofer.documento}
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleEditarChofer(chofer)} className="bg-yellow-500 text-white px-2 py-1 rounded">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            </svg>
+                                        </button>
+                                        <button onClick={() => handleEliminarChofer(chofer._id)} className="bg-red-500 text-white px-2 py-1 rounded">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </li>
+
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Listado de Órdenes */}
+                    <div className="mt-6">
+                        <h2 className="text-xl font-bold">Órdenes</h2>
+                        <button
+                            onClick={handleCrearOrden}
+                            className="mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"
+                        >
+                            + Crear Orden
+                        </button>
+                        <ul className="mt-4">
+                            {ordenes.map((orden) => (
+                                <li key={orden._id} className="border p-2 rounded mt-2 flex flex-col">
+                                    <span><strong>Producto:</strong> {formatText(orden.producto)}</span>
+                                    <span><strong>Estado:</strong> {formatText(orden.estado)}</span>
+                                    <span><strong>Vehículo:</strong> {orden.unidadTipo} - {orden.unidadMatricula}</span>
+                                    <span><strong>Chofer:</strong> {orden.choferNombre} - {orden.choferDocumento}</span>
+                                    {orden.litros && <span><strong>Litros:</strong> {orden.litros} L</span>}
+                                    {orden.monto && <span><strong>Monto:</strong> $ {orden.monto}</span>}
+                                    <span><strong>Fecha:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
                 </div>
             ) : (
                 <p className="text-red-500 text-center">No tienes una empresa registrada.</p>

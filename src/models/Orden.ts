@@ -1,21 +1,33 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface IOrden extends Document {
-    empresaId: Types.ObjectId;
-    unidad: string;
-    litros: number;
-    precio: number;
-    estado: "pendiente" | "completada";
-    fecha: Date;
+interface IOrden extends Document {
+    fechaEmision: Date;
+    fechaCarga?: Date;
+    unidadId: mongoose.Types.ObjectId;
+    choferId: mongoose.Types.ObjectId;
+    producto: "GASOIL_G2" | "GASOIL_G3" | "NAFTA_SUPER" | "NAFTA_ECO";
+    litros?: number;
+    monto?: number;
+    estado: "PENDIENTE_AUTORIZACION" | "AUTORIZADA" | "PENDIENTE_CARGA" | "CARGA_FINALIZADA";
 }
 
 const OrdenSchema = new Schema<IOrden>({
-    empresaId: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
-    unidad: { type: String, required: true },
-    litros: { type: Number, required: true },
-    precio: { type: Number, required: true },
-    estado: { type: String, enum: ["pendiente", "completada"], default: "pendiente" },
-    fecha: { type: Date, default: Date.now },
+    fechaEmision: { type: Date, default: Date.now }, // Se genera automáticamente
+    fechaCarga: { type: Date },
+    unidadId: { type: Schema.Types.ObjectId, ref: "Unidad", required: true },
+    choferId: { type: Schema.Types.ObjectId, ref: "Chofer", required: true },
+    producto: {
+        type: String,
+        enum: ["GASOIL_G2", "GASOIL_G3", "NAFTA_SUPER", "NAFTA_ECO"],
+        required: true,
+    },
+    litros: { type: Number },
+    monto: { type: Number },
+    estado: {
+        type: String,
+        enum: ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "PENDIENTE_CARGA", "CARGA_FINALIZADA"],
+        default: "PENDIENTE_AUTORIZACION",
+    },
 });
 
-export default mongoose.models.Orden || mongoose.model<IOrden>("Orden", OrdenSchema);
+export default mongoose.models.Orden || mongoose.model<IOrden>("Orden", OrdenSchema, "ordenes");
