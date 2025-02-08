@@ -19,6 +19,7 @@ interface Unidad {
     empresaId: string;
     matricula: string;
     tipo: string;
+    choferAnexado?: string | null; // ✅ Ahora la propiedad está definida
 }
 
 interface Chofer {
@@ -228,6 +229,7 @@ export default function EmpresaDashboard() {
                     empresaId: empresa._id,
                     matricula: (document.getElementById("swal-matricula") as HTMLInputElement).value.toUpperCase(),
                     tipo: (document.getElementById("swal-tipo") as HTMLSelectElement).value.toUpperCase(),
+                    choferAnexado: null, // 🔥 Asegurar que la unidad nueva NO tenga chofer asignado
                 };
             },
         });
@@ -240,8 +242,10 @@ export default function EmpresaDashboard() {
             });
 
             if (res.ok) {
+                const nuevaUnidad = await res.json();
                 Swal.fire("¡Agregada!", "Unidad registrada correctamente.", "success");
-                setUnidades([...unidades, value]); // Agrega la nueva unidad a la lista
+
+                setUnidades([...unidades, nuevaUnidad.unidad]); // ✅ Agregar la unidad con `choferAnexado: null`
             } else {
                 Swal.fire("Error", "No se pudo registrar la unidad", "error");
             }
@@ -305,9 +309,79 @@ export default function EmpresaDashboard() {
 
             if (res.ok) {
                 Swal.fire("Eliminado", "La unidad ha sido eliminada.", "success");
-                setUnidades(unidades.filter((unidad) => unidad._id !== unidadId));
+                setUnidades(unidades.filter((unidad) => unidad._id !== unidadId)); // ✅ Actualizar estado
             } else {
                 Swal.fire("Error", "No se pudo eliminar la unidad", "error");
+            }
+        }
+    };
+    const handleAnexarOQuitarChofer = async (unidad: Unidad) => {
+        if (unidad.choferAnexado) {
+            // ✅ Si hay un chofer asignado, dar opción para quitarlo
+            const confirmacion = await Swal.fire({
+                title: "¿Quitar chofer?",
+                text: "Esta acción eliminará el chofer asignado a esta unidad.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, quitar",
+                cancelButtonText: "Cancelar"
+            });
+
+            if (confirmacion.isConfirmed) {
+                const res = await fetch(`/api/unidades/${unidad._id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ choferAnexado: null }), // 🔥 Eliminar chofer
+                });
+
+                if (res.ok) {
+                    const updatedUnidad = await res.json();
+                    Swal.fire("¡Éxito!", "El chofer ha sido eliminado de la unidad.", "success");
+
+                    setUnidades((prevUnidades) =>
+                        prevUnidades.map((u) =>
+                            u._id === unidad._id ? { ...u, choferAnexado: null } : u
+                        )
+                    );
+                } else {
+                    Swal.fire("Error", "No se pudo quitar el chofer", "error");
+                }
+            }
+        } else {
+            // ✅ Si no hay chofer asignado, permitir asignar uno
+            const { value } = await Swal.fire({
+                title: "Anexar Chofer",
+                html: `
+                    <select id="swal-chofer" class="swal2-input">
+                        ${choferes.map((chofer) => `<option value="${chofer._id}">${chofer.nombre} (DNI: ${chofer.documento})</option>`).join("")}
+                    </select>
+                `,
+                showCancelButton: true,
+                confirmButtonText: "Anexar",
+                preConfirm: () => {
+                    return (document.getElementById("swal-chofer") as HTMLSelectElement).value;
+                }
+            });
+
+            if (value) {
+                const res = await fetch(`/api/unidades/${unidad._id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ choferAnexado: value }),
+                });
+
+                if (res.ok) {
+                    const updatedUnidad = await res.json();
+                    Swal.fire("¡Éxito!", "El chofer fue anexado a la unidad.", "success");
+
+                    setUnidades((prevUnidades) =>
+                        prevUnidades.map((u) =>
+                            u._id === unidad._id ? { ...u, choferAnexado: updatedUnidad.unidad.choferAnexado } : u
+                        )
+                    );
+                } else {
+                    Swal.fire("Error", "No se pudo anexar el chofer", "error");
+                }
             }
         }
     };
@@ -567,30 +641,87 @@ export default function EmpresaDashboard() {
                     <div className="mt-6">
                         <h2 className="text-xl font-bold">Unidades</h2>
                         <button
-                            onClick={() => handleAgregarUnidad()}
+                            onClick={handleAgregarUnidad}
                             className="mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"
                         >
                             + Agregar Unidad
                         </button>
-                        <ul className="mt-4">
-                            {unidades.map((unidad) => (
-                                <li key={unidad._id || unidad.matricula} className="border p-2 rounded mt-2 flex justify-between">
-                                    {unidad.tipo} - {unidad.matricula}
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleEditarUnidad(unidad)} className="bg-yellow-500 text-white px-2 py-1 rounded">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                            </svg>
-                                        </button>
-                                        <button onClick={() => handleEliminarUnidad(unidad._id)} className="bg-red-500 text-white px-2 py-1 rounded">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                            </svg>
-                                        </button>
+
+                        {/* 🔥 Cards en fila, cada una ocupa todo el ancho */}
+                        <div className="mt-4 flex flex-col gap-4">
+                            {unidades.map((unidad, index) => {
+                                const chofer = choferes.find(c => c._id === unidad.choferAnexado);
+
+                                return (
+                                    <div key={unidad._id || index} className="bg-white shadow-lg rounded-lg p-5 flex flex-col gap-3">
+                                        {/* 📌 Info de la Unidad */}
+                                        <div className="flex flex-col">
+                                            <h3 className="text-lg font-bold text-gray-800">{unidad.tipo} - {unidad.matricula}</h3>
+
+                                            {/* Chofer Asignado */}
+                                            <div className="mt-2 text-gray-600 text-sm">
+                                                <p className="font-semibold">Chofer:</p>
+                                                {chofer ? (
+                                                    <>
+                                                        <p>{chofer.nombre}</p>
+                                                        <p className="text-xs text-gray-500">DNI: {chofer.documento}</p>
+                                                    </>
+                                                ) : (
+                                                    <p className="text-red-500">Sin chofer asignado</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* 📌 Botones de Acción (Debajo de la Info) */}
+                                        <div className="mt-4 flex flex-col items-center gap-2">
+                                            <button
+                                                onClick={() => handleAnexarOQuitarChofer(unidad)}
+                                                className={`w-full flex items-center justify-center px-3 py-2 rounded text-white font-medium transition ${unidad.choferAnexado ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"
+                                                    }`}
+                                            >
+                                                {unidad.choferAnexado ? (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 mr-2">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                        Desvincular Chofer
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 mr-2">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                                        </svg>
+                                                        Vincular Chofer
+                                                    </>
+                                                )}
+                                            </button>
+
+                                            <div className="flex justify-center w-full gap-4">
+                                                <button
+                                                    onClick={() => handleEditarUnidad(unidad)}
+                                                    className="flex items-center justify-center bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition w-1/2"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 mr-2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                    </svg>
+                                                    Editar
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleEliminarUnidad(unidad._id)}
+                                                    className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition w-1/2"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 mr-2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                    </svg>
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </li>
-                            ))}
-                        </ul>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     {/* Choferes */}
@@ -603,8 +734,8 @@ export default function EmpresaDashboard() {
                             + Agregar Chofer
                         </button>
                         <ul className="mt-4">
-                            {choferes.map((chofer) => (
-                                <li key={chofer._id} className="border p-2 rounded mt-2 flex justify-between">
+                            {choferes.map((chofer, index) => (
+                                <li key={chofer._id || index} className="border p-2 rounded mt-2 flex justify-between">
                                     {chofer.nombre.toUpperCase()} - {chofer.documento}
                                     <div className="flex gap-2">
                                         <button onClick={() => handleEditarChofer(chofer)} className="bg-yellow-500 text-white px-2 py-1 rounded">

@@ -1,22 +1,17 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface IUnidad extends Document {
-    empresaId: Types.ObjectId;
+interface IUnidad extends Document {
+    empresaId: string;
     matricula: string;
-    tipo: "CAMION" | "COLECTIVO" | "UTILITARIO" | "AUTOMOVIL" | "MOTO";
-    choferAsignado?: Types.ObjectId; // ✅ Nuevo campo
+    tipo: string;
+    choferAnexado?: string; // Nuevo campo para el chofer anexado
 }
 
 const UnidadSchema = new Schema<IUnidad>({
-    empresaId: { type: Schema.Types.ObjectId, ref: "Empresa", required: true },
+    empresaId: { type: String, required: true },
     matricula: { type: String, required: true, unique: true },
-    tipo: {
-        type: String, 
-        enum: ["CAMION", "COLECTIVO", "UTILITARIO", "AUTOMOVIL", "MOTO"], 
-        required: true,
-        set: (v: string) => v.toUpperCase(),
-    },
-    choferAsignado: { type: Schema.Types.ObjectId, ref: "Chofer", default: null }, // ✅ Referencia a chofer
-}, { collection: "unidades" });
+    tipo: { type: String, required: true },
+    choferAnexado: { type: String, default: null } // Inicialmente vacío
+});
 
 export default mongoose.models.Unidad || mongoose.model<IUnidad>("Unidad", UnidadSchema, 'unidades');
