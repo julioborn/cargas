@@ -2,10 +2,11 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   // Determinar la ruta del dashboard según el rol del usuario
@@ -25,10 +26,10 @@ export default function HomePage() {
     router.push("/login");
   };
 
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-white text-lg">
-        Cargando...
+      <div className="flex items-center justify-center h-screen text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
       </div>
     );
   }

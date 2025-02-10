@@ -186,8 +186,12 @@ export default function Unidades() {
         }
     };
 
-    if (loading) {
-        return <div className="text-white text-center mt-6">Cargando...</div>;
+    if (status === "loading" || loading) {
+        return (
+            <div className="flex items-center justify-center h-screen text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
+            </div>
+        );
     }
 
     return (

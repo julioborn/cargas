@@ -16,7 +16,6 @@ export default function Choferes() {
     const { data: session } = useSession();
     const userId = session?.user?.id;
     const router = useRouter();
-
     const [choferes, setChoferes] = useState<Chofer[]>([]);
     const [empresaId, setEmpresaId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -172,8 +171,12 @@ export default function Choferes() {
         }
     };
 
-    if (loading) {
-        return <div className="text-white text-center mt-6">Cargando...</div>;
+    if (status === "loading" || loading) {
+        return (
+            <div className="flex items-center justify-center h-screen text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
+            </div>
+        );
     }
 
     return (

@@ -50,13 +50,10 @@ export default function EmpresaDashboard() {
     const router = useRouter();
     const userId = session?.user?.id;
     const [empresa, setEmpresa] = useState<Empresa | null>(null);
-    const [unidades, setUnidades] = useState<Unidad[]>([]);
-    const [choferes, setChoferes] = useState<Chofer[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [mensaje, setMensaje] = useState("");
     const [menuAbierto, setMenuAbierto] = useState(false);
-    const [ordenes, setOrdenes] = useState<Orden[]>([]);
 
     useEffect(() => {
         if (!userId) return;
@@ -66,48 +63,11 @@ export default function EmpresaDashboard() {
                 // 1️⃣ Obtener empresa
                 const resEmpresa = await fetch(`/api/empresas/usuario/${userId}`);
                 const dataEmpresa: Empresa | { error: string } = await resEmpresa.json();
-
                 if ("error" in dataEmpresa) {
                     setMensaje(dataEmpresa.error);
                     return;
                 }
                 setEmpresa(dataEmpresa);
-
-                // 2️⃣ Obtener unidades
-                const resUnidades = await fetch(`/api/unidades`);
-                const dataUnidades: Unidad[] = await resUnidades.json();
-                const unidadesFiltradas = dataUnidades.filter((unidad) => unidad.empresaId === dataEmpresa._id);
-                setUnidades(unidadesFiltradas);
-
-                // 3️⃣ Obtener choferes
-                const resChoferes = await fetch(`/api/choferes`);
-                const dataChoferes: Chofer[] = await resChoferes.json();
-                const choferesFiltrados = dataChoferes.filter((chofer) => chofer.empresaId === dataEmpresa._id);
-                setChoferes(choferesFiltrados);
-
-                // 4️⃣ Obtener órdenes y enriquecer datos con unidades y choferes
-                const resOrdenes = await fetch(`/api/ordenes`);
-                const dataOrdenes: Orden[] = await resOrdenes.json();
-
-                if (!Array.isArray(dataOrdenes)) {
-                    console.error("❌ La API no devolvió un array en /api/ordenes", dataOrdenes);
-                    return;
-                }
-
-                const ordenesConDatos = dataOrdenes.map((orden) => {
-                    const unidad = unidadesFiltradas.find((u) => u._id === orden.unidadId);
-                    const chofer = choferesFiltrados.find((c) => c._id === orden.choferId);
-
-                    return {
-                        ...orden,
-                        unidadMatricula: unidad ? unidad.matricula : "Desconocida",
-                        unidadTipo: unidad ? unidad.tipo : "Desconocido",
-                        choferNombre: chofer ? chofer.nombre : "Desconocido",
-                        choferDocumento: chofer ? chofer.documento : "Desconocido",
-                    };
-                });
-
-                setOrdenes(ordenesConDatos);
             } catch (error) {
                 console.error("❌ Error obteniendo datos:", error);
             } finally {
@@ -120,8 +80,8 @@ export default function EmpresaDashboard() {
 
     if (status === "loading" || loading) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
+            <div className="flex items-center justify-center h-screen text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
             </div>
         );
     }
@@ -194,7 +154,6 @@ export default function EmpresaDashboard() {
             if (res.ok) {
                 Swal.fire("Eliminado", "La empresa y sus unidades han sido eliminadas.", "success");
                 setEmpresa(null);
-                setUnidades([]);
             } else {
                 Swal.fire("Error", "No se pudo eliminar la empresa", "error");
             }
