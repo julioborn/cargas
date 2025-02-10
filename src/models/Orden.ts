@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 interface IOrden extends Document {
+    empresaId: mongoose.Types.ObjectId;
     fechaEmision: Date;
     fechaCarga?: Date;
     unidadId: mongoose.Types.ObjectId;
@@ -8,11 +9,12 @@ interface IOrden extends Document {
     producto: "GASOIL_G2" | "GASOIL_G3" | "NAFTA_SUPER" | "NAFTA_ECO";
     litros?: number;
     monto?: number;
-    estado: "PENDIENTE_AUTORIZACION" | "AUTORIZADA" | "PENDIENTE_CARGA" | "CARGA_FINALIZADA";
+    estado: "PENDIENTE_AUTORIZACION" | "PENDIENTE_CARGA" | "CARGA_COMPLETADA";
 }
 
 const OrdenSchema = new Schema<IOrden>({
-    fechaEmision: { type: Date, default: Date.now }, // Se genera automáticamente
+    empresaId: { type: Schema.Types.ObjectId, ref: "Empresa", required: true }, // ✅ Asegurar que es requerido
+    fechaEmision: { type: Date, default: Date.now },
     fechaCarga: { type: Date },
     unidadId: { type: Schema.Types.ObjectId, ref: "Unidad", required: true },
     choferId: { type: Schema.Types.ObjectId, ref: "Chofer", required: true },
@@ -25,7 +27,7 @@ const OrdenSchema = new Schema<IOrden>({
     monto: { type: Number },
     estado: {
         type: String,
-        enum: ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "PENDIENTE_CARGA", "CARGA_FINALIZADA"],
+        enum: ["PENDIENTE_AUTORIZACION", "PENDIENTE_CARGA", "CARGA_COMPLETADA"],
         default: "PENDIENTE_AUTORIZACION",
     },
 });
