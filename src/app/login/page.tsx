@@ -14,17 +14,23 @@ export default function LoginPage() {
         e.preventDefault();
         setError("");
 
+        console.log("🔍 Intentando iniciar sesión con:", { email, password });
+
         const result = await signIn("credentials", {
             email,
             password,
             redirect: false,
         });
 
+        console.log("🔍 Respuesta del signIn:", result);
+
         if (result?.error) {
             setError("Credenciales incorrectas");
         } else {
             const res = await fetch("/api/auth/session");
             const session = await res.json();
+
+            console.log("🔍 Sesión obtenida:", session);
 
             if (session?.user?.role === "admin") {
                 router.push("/dashboard");

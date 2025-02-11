@@ -161,10 +161,9 @@ export default function EmpresaDashboard() {
     };
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl text-white font-bold text-center mb-4">Datos de la Empresa</h1>
+        <div className="p-6 mt-20">
             {empresa ? (
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto relative">
+                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto relative border border-black">
                     {/* Datos de la Empresa */}
                     <div>
                         <strong className="text-xl text-gray-700">{empresa.nombre}</strong>
@@ -176,7 +175,7 @@ export default function EmpresaDashboard() {
                     {/* Botón de Configuración */}
                     <div className="absolute top-3 right-3">
                         <button
-                            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300"
+                            className="p-2 rounded-full"
                             onClick={() => setMenuAbierto(!menuAbierto)}
                         >
                             <FiSettings className="text-gray-700 text-lg" />
@@ -205,7 +204,7 @@ export default function EmpresaDashboard() {
                         {/* Unidades */}
                         <button
                             onClick={() => router.push("/unidades")}
-                            className="mt-4 mb-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md"
+                            className="mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
                         >
                             Unidades
                         </button>
@@ -213,7 +212,7 @@ export default function EmpresaDashboard() {
                         {/* Choferes */}
                         <button
                             onClick={() => router.push("/choferes")}
-                            className="mt-4 mb-4 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-md"
+                            className="mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
                         >
                             Choferes
                         </button>
@@ -221,7 +220,7 @@ export default function EmpresaDashboard() {
                         {/* Listado de Órdenes */}
                         <button
                             onClick={() => router.push("/ordenes")}
-                            className="mt-4 mb-4 px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-md"
+                            className="mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
                         >
                             + Crear Orden
                         </button>

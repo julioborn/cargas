@@ -26,7 +26,10 @@ const authOptions: AuthOptions = {
 
                 console.log("✅ Usuario encontrado:", user);
 
-                const isValidPassword = await bcrypt.compare(credentials?.password || "", user.password);
+                const inputPassword = credentials?.password ?? "";
+                const storedPassword = user.password ?? "";
+
+                const isValidPassword = await bcrypt.compare(inputPassword, storedPassword);
 
                 if (!isValidPassword) {
                     console.log("❌ Contraseña incorrecta");

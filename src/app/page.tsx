@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   // Determinar la ruta del dashboard según el rol del usuario
@@ -26,7 +25,7 @@ export default function HomePage() {
     router.push("/login");
   };
 
-  if (status === "loading" || loading) {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-screen text-white">
         <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
@@ -35,24 +34,25 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center text-white text-center px-6">
-      <h1 className="text-3xl font-bold mb-4 animate-fade-in">Bienvenido</h1>
+    <div className="h-screen flex flex-col items-center justify-center text-center px-6">
+      <div className="flex flex-col rouded bg-black p-16 rounded-md">
+        <h1 className="text-3xl text-white font-bold mb-4 animate-fade-in">Bienvenido</h1>
+        {dashboardRoute && (
+          <button
+            onClick={() => router.push(dashboardRoute)}
+            className="mb-4 px-6 py-2 text-white bg-green-500 hover:bg-green-600 transition-all duration-300 rounded-md font-semibold shadow-md hover:shadow-lg"
+          >
+            Panel de Administración
+          </button>
+        )}
 
-      {dashboardRoute && (
         <button
-          onClick={() => router.push(dashboardRoute)}
-          className="mb-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 transition-all duration-300 rounded-md font-semibold shadow-md hover:shadow-lg"
+          onClick={handleLogout}
+          className="px-6 py-2 text-white bg-red-500 hover:bg-red-600 transition-all duration-300 rounded-md font-semibold shadow-md hover:shadow-lg"
         >
-          Panel de Administración
+          Cerrar sesión
         </button>
-      )}
-
-      <button
-        onClick={handleLogout}
-        className="px-6 py-2 bg-red-500 hover:bg-red-600 transition-all duration-300 rounded-md font-semibold shadow-md hover:shadow-lg"
-      >
-        Cerrar sesión
-      </button>
+      </div>
     </div>
   );
 }
