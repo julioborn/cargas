@@ -4,6 +4,18 @@ import Empresa from "@/models/Empresa";
 import Usuario from "@/models/Usuario";
 import mongoose from "mongoose"; // Importar mongoose para convertir el ID
 
+export async function GET() {
+    try {
+        await connectMongoDB();
+        const empresas = await Empresa.find();
+        console.log("📡 Empresas obtenidas:", empresas);
+        return NextResponse.json(empresas);
+    } catch (error) {
+        console.error("❌ Error al obtener empresas:", error);
+        return NextResponse.json({ error: "Error al obtener empresas" }, { status: 500 });
+    }
+}
+
 export async function POST(req: Request) {
     try {
         await connectMongoDB();

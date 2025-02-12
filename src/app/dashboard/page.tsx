@@ -1,116 +1,198 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FiLogOut, FiHome, FiSettings } from "react-icons/fi";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
-export interface IOrden extends Document {
-    _id: string; // Asegúrate de que _id es un string
-    empresaId: { _id: string; nombre: string }; // Incluir el nombre de la empresa
-    unidad: string;
-    litros: number;
-    precio: number;
-    estado: "pendiente" | "completada";
-    fecha: Date;
+interface Empresa {
+    _id: string;
+    nombre: string;
 }
 
-export default function DashboardPage() {
-    const { data: session, status } = useSession();
+interface Orden {
+    _id: string;
+    empresaId: Empresa;
+    producto: string;
+    litros: number;
+    estado: string;
+    fechaEmision: string;
+    fechaCarga?: string;
+}
+
+export default function Dashboard() {
+    const { data: session } = useSession();
     const router = useRouter();
-    const [ordenes, setOrdenes] = useState<IOrden[]>([]);
+    const [ordenes, setOrdenes] = useState<Orden[]>([]);
+    const [empresas, setEmpresas] = useState<Empresa[]>([]);
+    const [filtros, setFiltros] = useState({
+        empresaId: "",
+        estado: "",
+        fechaDesde: "",
+        fechaHasta: "",
+    });
 
     useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login");
-        }
-    }, [status, router]);
+        const fetchEmpresas = async () => {
+            try {
+                const res = await fetch("/api/empresas");
+                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+                const data = await res.json();
+
+                console.log("📡 Empresas cargadas desde API:", data);
+
+                if (!Array.isArray(data)) {
+                    console.error("❌ Error: La API no devuelve un array.");
+                    return;
+                }
+
+                setEmpresas(data);
+            } catch (error) {
+                console.error("❌ Error al cargar empresas:", error);
+            }
+        };
+        fetchEmpresas();
+    }, []);
 
     useEffect(() => {
         const fetchOrdenes = async () => {
             try {
-                const res = await fetch("/api/ordenes");
+                const params = new URLSearchParams(
+                    Object.fromEntries(Object.entries(filtros).filter(([_, v]) => v !== ""))
+                ).toString();
+
+                const res = await fetch(`/api/ordenes?${params}`);
+                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
                 const data = await res.json();
-                setOrdenes(data.ordenes || []); // Evitar asignar `undefined`
+                console.log("Órdenes filtradas:", data);
+                setOrdenes(data);
             } catch (error) {
-                console.error("Error al obtener órdenes:", error);
+                console.error("Error al cargar órdenes:", error);
             }
         };
+        fetchOrdenes();
+    }, [filtros]);
 
-        if (status === "authenticated") {
-            fetchOrdenes();
+    const actualizarEstado = async (id: string, nuevoEstado: string) => {
+        const res = await fetch("/api/ordenes", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, nuevoEstado }),
+        });
+
+        if (res.ok) {
+            Swal.fire("Actualizado", `La orden ha sido marcada como "${nuevoEstado}".`, "success");
+            setOrdenes((prev) =>
+                prev.map((orden) => (orden._id === id ? { ...orden, estado: nuevoEstado } : orden))
+            );
+        } else {
+            Swal.fire("Error", "No se pudo actualizar la orden", "error");
         }
-    }, [status]);
+    };
 
-    if (status === "loading") {
-        return <p className="text-center text-gray-600 mt-10">Cargando...</p>;
-    }
+    const formatFecha = (fecha: string) => (fecha ? new Date(fecha).toISOString().split("T")[0] : "");
+
+    const handleFiltroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFiltros((prev) => ({
+            ...prev,
+            [name]: name.includes("fecha") ? formatFecha(value) : value,
+        }));
+    };
+
 
     return (
-        <div className="flex min-h-screen">
-            {/* Sidebar */}
-            <aside className="w-64 bg-gray-800 text-white p-6 flex flex-col">
-                <h2 className="text-xl font-bold mb-6">Dashboard</h2>
-                <nav className="space-y-4">
-                    <a href="#" className="flex items-center gap-2 text-gray-300 hover:text-white">
-                        <FiHome /> Inicio
-                    </a>
-                    <a href="#" className="flex items-center gap-2 text-gray-300 hover:text-white">
-                        <FiSettings /> Configuración
-                    </a>
-                </nav>
-                <button
-                    onClick={() => signOut()}
-                    className="mt-auto bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded flex items-center gap-2"
-                >
-                    <FiLogOut /> Cerrar sesión
-                </button>
-            </aside>
+        <div className="max-w-6xl mx-auto p-6 mt-20">
 
-            {/* Contenido principal */}
-            <main className="flex-1 bg-gray-100 p-6">
-                <header className="flex justify-between items-center bg-white p-4 shadow-md rounded-lg">
-                    <h1 className="text-lg font-semibold">Bienvenido, {session?.user?.name}!</h1>
-                </header>
+            <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
 
-                {/* Lista de órdenes */}
-                <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-xl font-bold mb-4">Órdenes de Carga</h2>
-                    {ordenes.length === 0 ? (
-                        <p className="text-gray-500">No hay órdenes registradas.</p>
-                    ) : (
-                        <table className="w-full border-collapse border border-gray-300">
-                            <thead>
-                                <tr className="bg-gray-200">
-                                    <th className="border border-gray-300 px-4 py-2">Empresa</th>
-                                    <th className="border border-gray-300 px-4 py-2">Unidad</th>
-                                    <th className="border border-gray-300 px-4 py-2">Litros</th>
-                                    <th className="border border-gray-300 px-4 py-2">Precio</th>
-                                    <th className="border border-gray-300 px-4 py-2">Estado</th>
-                                    <th className="border border-gray-300 px-4 py-2">Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {ordenes.map((orden) => (
-                                    <tr key={orden._id} className="text-center">
-                                        <td className="border border-gray-300 px-4 py-2">{orden.empresaId.nombre}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{orden.unidad}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{orden.litros}L</td>
-                                        <td className="border border-gray-300 px-4 py-2">${orden.precio}</td>
-                                        <td className={`border px-4 py-2 font-bold ${orden.estado === "pendiente" ? "text-red-500" : "text-green-500"
-                                            }`}>
-                                            {orden.estado}
-                                        </td>
-                                        <td className="border border-gray-300 px-4 py-2">
-                                            {new Date(orden.fecha).toLocaleDateString()}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+                <h2 className="text-2xl font-bold">Panel de Administración</h2>
+
+                {/* 🔍 Filtros */}
+                <div className="flex gap-4 mt-4">
+                    <select
+                        value={filtros.empresaId}
+                        onChange={(e) => setFiltros({ ...filtros, empresaId: e.target.value })}
+                        className="p-2 border border-gray-400 rounded"
+                    >
+                        <option value="">Todas las Empresas</option>
+                        {empresas.map((empresa) => (
+                            <option key={empresa._id} value={empresa._id}>
+                                {empresa.nombre}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={filtros.estado}
+                        onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
+                        className="p-2 border border-gray-400 rounded"
+                    >
+                        <option value="">Todos los Estados</option>
+                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
+                        <option value="PENDIENTE_CARGA">Pendiente de Carga</option>
+                        <option value="CARGADA">Cargada</option>
+                    </select>
+
+                    <input
+                        type="date"
+                        name="fechaDesde"
+                        value={filtros.fechaDesde}
+                        onChange={handleFiltroChange}
+                        className="p-2 border border-gray-400 rounded"
+                    />
+                    <input
+                        type="date"
+                        name="fechaHasta"
+                        value={filtros.fechaHasta}
+                        onChange={handleFiltroChange}
+                        className="p-2 border border-gray-400 rounded"
+                    />
                 </div>
-            </main>
+
+                {/* 📜 Lista de Órdenes */}
+                <div className="mt-4 relative flex flex-col border border-gray-400 rounded col-span-2">
+                    <ul className="max-h-96 overflow-y-auto">
+                        {ordenes.map((orden) => (
+                            <li key={orden._id} className="border border-gray-300 p-4 rounded mb-2">
+                                <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
+                                <p><strong>Producto:</strong> {orden.producto.replace(/_/g, " ")}</p>
+                                <p><strong>Litros:</strong> {orden.litros} L</p>
+                                <p><strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>
+                                {orden.fechaCarga && <p><strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>}
+
+                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION" ? "text-yellow-600"
+                                    : orden.estado === "PENDIENTE_CARGA" ? "text-green-600"
+                                        : "text-red-600"
+                                    }`}>
+                                    {orden.estado.replace(/_/g, " ")}
+                                </p>
+
+                                {/* 🛠️ Botones de Acción */}
+                                <div className="flex gap-2 mt-2">
+                                    {orden.estado === "PENDIENTE_AUTORIZACION" && (
+                                        <button
+                                            onClick={() => actualizarEstado(orden._id, "PENDIENTE_CARGA")}
+                                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                        >
+                                            Autorizar
+                                        </button>
+                                    )}
+                                    {orden.estado === "PENDIENTE_CARGA" && (
+                                        <button
+                                            onClick={() => actualizarEstado(orden._id, "CARGADA")}
+                                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                        >
+                                            Finalizar
+                                        </button>
+                                    )}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+            </div>
         </div>
     );
 }
