@@ -67,12 +67,23 @@ export default function Ordenes() {
     }, [userId]);
 
     useEffect(() => {
+        if (!empresaId) return; // Si no hay empresaId, no hacer la consulta
+    
         const fetchOrdenes = async () => {
             try {
+                console.log("📡 Fetching orders for empresaId:", empresaId); // Depuración
+    
                 const res = await fetch(`/api/ordenes?empresaId=${empresaId}`);
-                if (!res.ok) throw new Error("No se pudieron obtener las órdenes");
-
+                console.log("📡 Response status:", res.status); // Ver estado HTTP
+    
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`Error HTTP ${res.status}: ${errorText}`);
+                }
+    
                 const dataOrdenes: Orden[] = await res.json();
+                console.log("✅ Órdenes obtenidas:", dataOrdenes); // Depuración
+    
                 setOrdenes(dataOrdenes);
             } catch (error) {
                 console.error("❌ Error obteniendo órdenes:", error);
@@ -80,9 +91,10 @@ export default function Ordenes() {
                 setLoading(false);
             }
         };
-
-        if (empresaId) fetchOrdenes();
+    
+        fetchOrdenes();
     }, [empresaId]);
+    
 
     if (loading) {
         return (

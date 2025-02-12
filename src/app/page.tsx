@@ -35,8 +35,8 @@ export default function HomePage() {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center text-center px-6">
-      <div className="flex flex-col rouded bg-black p-16 rounded-md">
-        <h1 className="text-3xl text-white font-bold mb-4 animate-fade-in">Bienvenido</h1>
+      <div className="flex flex-col rouded bg-white p-16 rounded-md shadow-md border border-black">
+        <h1 className="text-3xl font-bold mb-4 animate-fade-in">Bienvenido</h1>
         {dashboardRoute && (
           <button
             onClick={() => router.push(dashboardRoute)}

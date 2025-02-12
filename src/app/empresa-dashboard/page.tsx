@@ -163,13 +163,16 @@ export default function EmpresaDashboard() {
     return (
         <div className="p-6 mt-20">
             {empresa ? (
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto relative border border-black">
+                <div className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto relative border border-black">
+
                     {/* Datos de la Empresa */}
-                    <div>
-                        <strong className="text-xl text-gray-700">{empresa.nombre}</strong>
-                        <p className="text-gray-700 mt-2"><strong>RUC/CUIT:</strong> {empresa.ruc_cuit}</p>
-                        <p className="text-gray-700"><strong>Dirección:</strong> {empresa.direccion}</p>
-                        <p className="text-gray-700"><strong>Teléfono:</strong> {empresa.telefono}</p>
+                    <div className="">
+                        <h2 className="text-3xl font-semibold text-gray-800 mb-2">{empresa.nombre}</h2>
+                        <div className="text-gray-600 space-y-2">
+                            <p><span className="font-semibold text-gray-700 text-lg">RUC/CUIT:</span> {empresa.ruc_cuit}</p>
+                            <p><span className="font-semibold text-gray-700 text-lg">Dirección:</span> {empresa.direccion}</p>
+                            <p><span className="font-semibold text-gray-700 text-lg">Teléfono:</span> {empresa.telefono}</p>
+                        </div>
                     </div>
 
                     {/* Botón de Configuración */}
@@ -200,29 +203,41 @@ export default function EmpresaDashboard() {
                         </div>
                     )}
 
-                    <div className="flex justify-between">
+                    {/* Botones */}
+                    <div className="flex justify-between mt-4 pt-2 border-t border-black">
                         {/* Unidades */}
                         <button
                             onClick={() => router.push("/unidades")}
-                            className="mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
+                            className="flex items-center gap-1 mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
                         >
                             Unidades
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                <path d="M6.5 3c-1.051 0-2.093.04-3.125.117A1.49 1.49 0 0 0 2 4.607V10.5h9V4.606c0-.771-.59-1.43-1.375-1.489A41.568 41.568 0 0 0 6.5 3ZM2 12v2.5A1.5 1.5 0 0 0 3.5 16h.041a3 3 0 0 1 5.918 0h.791a.75.75 0 0 0 .75-.75V12H2Z" />
+                                <path d="M6.5 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM13.25 5a.75.75 0 0 0-.75.75v8.514a3.001 3.001 0 0 1 4.893 1.44c.37-.275.61-.719.595-1.227a24.905 24.905 0 0 0-1.784-8.549A1.486 1.486 0 0 0 14.823 5H13.25ZM14.5 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+                            </svg>
                         </button>
 
                         {/* Choferes */}
                         <button
                             onClick={() => router.push("/choferes")}
-                            className="mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
+                            className="flex items-center gap-1 mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
                         >
                             Choferes
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                <path d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 7 18a9.953 9.953 0 0 1-5.385-1.572ZM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 0 0-1.588-3.755 4.502 4.502 0 0 1 5.874 2.636.818.818 0 0 1-.36.98A7.465 7.465 0 0 1 14.5 16Z" />
+                            </svg>
                         </button>
 
                         {/* Listado de Órdenes */}
                         <button
                             onClick={() => router.push("/ordenes")}
-                            className="mt-4 mb-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
+                            className="flex items-center gap-1 mt-4 mb-4 px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"
                         >
-                            + Crear Orden
+                            Ordenes
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                <path fillRule="evenodd" d="M15.988 3.012A2.25 2.25 0 0 1 18 5.25v6.5A2.25 2.25 0 0 1 15.75 14H13.5V7A2.5 2.5 0 0 0 11 4.5H8.128a2.252 2.252 0 0 1 1.884-1.488A2.25 2.25 0 0 1 12.25 1h1.5a2.25 2.25 0 0 1 2.238 2.012ZM11.5 3.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75v.25h-3v-.25Z" clipRule="evenodd" />
+                                <path fillRule="evenodd" d="M2 7a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7Zm2 3.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Zm0 3.5a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+                            </svg>
                         </button>
                     </div>
 
