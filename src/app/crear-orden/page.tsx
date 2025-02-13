@@ -130,7 +130,7 @@ export default function CrearOrden() {
             litros: litros ? parseFloat(litros) : undefined,
             monto: monto ? parseFloat(monto) : undefined,
             fechaCarga: fechaCarga || undefined,
-            estado: "PENDIENTE_AUTORIZACION",
+            estado: "PENDIENTE",
         };
 
         console.log("📤 Enviando orden a la API:", nuevaOrden); // 🔥 Verificar en consola

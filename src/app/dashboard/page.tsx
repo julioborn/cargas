@@ -107,6 +107,7 @@ export default function Dashboard() {
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
 
                 <h2 className="text-2xl font-bold">Panel de Administración</h2>
+                <h2 className="text-2xl font-bold mt-2">Órdenes</h2>
 
                 {/* 🔍 Filtros */}
                 <div className="flex gap-4 mt-4">
@@ -129,8 +130,8 @@ export default function Dashboard() {
                         className="p-2 border border-gray-400 rounded"
                     >
                         <option value="">Todos los Estados</option>
-                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
-                        <option value="PENDIENTE_CARGA">Pendiente de Carga</option>
+                        <option value="PENDIENTE">Pendiente de Autorización</option>
+                        <option value="AUTORIZADA">Pendiente de Carga</option>
                         <option value="CARGADA">Cargada</option>
                     </select>
 
@@ -161,8 +162,8 @@ export default function Dashboard() {
                                 <p><strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>
                                 {orden.fechaCarga && <p><strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>}
 
-                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION" ? "text-yellow-600"
-                                    : orden.estado === "PENDIENTE_CARGA" ? "text-green-600"
+                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600"
+                                    : orden.estado === "AUTORIZADA" ? "text-green-600"
                                         : "text-red-600"
                                     }`}>
                                     {orden.estado.replace(/_/g, " ")}
@@ -170,18 +171,18 @@ export default function Dashboard() {
 
                                 {/* 🛠️ Botones de Acción */}
                                 <div className="flex gap-2 mt-2">
-                                    {orden.estado === "PENDIENTE_AUTORIZACION" && (
+                                    {orden.estado === "PENDIENTE" && (
                                         <button
-                                            onClick={() => actualizarEstado(orden._id, "PENDIENTE_CARGA")}
+                                            onClick={() => actualizarEstado(orden._id, "AUTORIZADA")}
                                             className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
                                         >
                                             Autorizar
                                         </button>
                                     )}
-                                    {orden.estado === "PENDIENTE_CARGA" && (
+                                    {orden.estado === "AUTORIZADA" && (
                                         <button
                                             onClick={() => actualizarEstado(orden._id, "CARGADA")}
-                                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                                         >
                                             Finalizar
                                         </button>

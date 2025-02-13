@@ -3,7 +3,8 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import QRCode from "qrcode";
 
 interface Unidad {
     _id: string;
@@ -31,6 +32,7 @@ interface Orden {
     estado: string;
     fechaEmision: string;
     fechaCarga: string;
+    codigoOrden: string;
 }
 
 export default function Ordenes() {
@@ -68,22 +70,22 @@ export default function Ordenes() {
 
     useEffect(() => {
         if (!empresaId) return; // Si no hay empresaId, no hacer la consulta
-    
+
         const fetchOrdenes = async () => {
             try {
                 console.log("📡 Fetching orders for empresaId:", empresaId); // Depuración
-    
+
                 const res = await fetch(`/api/ordenes?empresaId=${empresaId}`);
                 console.log("📡 Response status:", res.status); // Ver estado HTTP
-    
+
                 if (!res.ok) {
                     const errorText = await res.text();
                     throw new Error(`Error HTTP ${res.status}: ${errorText}`);
                 }
-    
+
                 const dataOrdenes: Orden[] = await res.json();
                 console.log("✅ Órdenes obtenidas:", dataOrdenes); // Depuración
-    
+
                 setOrdenes(dataOrdenes);
             } catch (error) {
                 console.error("❌ Error obteniendo órdenes:", error);
@@ -91,10 +93,9 @@ export default function Ordenes() {
                 setLoading(false);
             }
         };
-    
+
         fetchOrdenes();
     }, [empresaId]);
-    
 
     if (loading) {
         return (
@@ -132,7 +133,6 @@ export default function Ordenes() {
             (filtroFechaEmision ? orden.fechaEmision?.startsWith(filtroFechaEmision) : true)
         );
     });
-
 
     return (
         <div className="max-w-2xl mx-auto p-6 mt-20">
@@ -213,8 +213,8 @@ export default function Ordenes() {
                         className="p-2 border border-gray-400 rounded"
                     >
                         <option value="">Todos los Estados</option>
-                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
-                        <option value="PENDIENTE_CARGA">Pendiente de Carga</option>
+                        <option value="PENDIENTE">Pendiente de Autorización</option>
+                        <option value="AUTORIZADA">Pendiente de Carga</option>
                         <option value="CARGADA">Cargada</option>
                     </select>
 
@@ -236,11 +236,16 @@ export default function Ordenes() {
                 {ordenes.length === 0 ? (
                     <p className="text-gray-600 text-center">No hay órdenes registradas.</p>
                 ) : (
-                    <div className="relative flex flex-col border border-gray-400 rounded col-span-2">
+                    <div className="relative flex flex-col col-span-2">
                         <ul className="max-h-96 overflow-y-auto">
                             {ordenesFiltradas.map((orden) => (
                                 <li key={orden._id} className="border border-gray-400 p-4 rounded mt-2 bg-white flex-shrink-0">
-                                    <p className="text-gray-800 font-bold">Producto: {orden.producto.replace(/_/g, " ")}</p>
+                                    <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
+                                        {orden.codigoOrden}
+                                    </p>
+                                    <p className="text-gray-600 font-bold">
+                                        {orden.producto.replace(/_/g, " ")}
+                                    </p>
                                     <p className="text-gray-600"><strong>Unidad: </strong>
                                         {typeof orden.unidadId === "object" ? orden.unidadId.matricula : "Desconocida"}
                                     </p>
@@ -254,8 +259,12 @@ export default function Ordenes() {
                                     {orden.monto !== undefined && <p className="text-gray-600"><strong>Monto:</strong> ${orden.monto}</p>}
                                     {orden.fechaEmision && <p className="text-gray-600"><strong>Fecha de Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>}
                                     {orden.fechaCarga && <p className="text-gray-600"><strong>Fecha de Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>}
-                                    <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION" ? "text-yellow-600" : orden.estado === "PENDIENTE_CARGA" ? "text-green-600" : "text-red-600"}`}>
-                                        {orden.estado.replace(/_/g, " ")}
+
+                                    <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600"
+                                        : orden.estado === "AUTORIZADA" ? "text-green-600"
+                                            : "text-red-600"
+                                        }`}>
+                                        {orden.estado}
                                     </p>
                                 </li>
                             ))}

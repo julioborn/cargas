@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
-import Unidad from "@/models/Unidad";  // 👈 IMPORTA EL MODELO
-import Chofer from "@/models/Chofer";  // 👈 IMPORTA EL MODELO
+import Unidad from "@/models/Unidad";
+import Chofer from "@/models/Chofer";
 import { connectMongoDB } from "@/lib/mongodb";
 
 export async function GET(req: Request) {
@@ -26,7 +27,12 @@ export async function GET(req: Request) {
 
         console.log("🔍 Filtro aplicado:", query);
 
-        const ordenes = await Orden.find(query).populate("empresaId");
+        // ✅ SE POPULAN unidadId Y choferId PARA QUE NO APAREZCAN COMO "DESCONOCIDA"
+        const ordenes = await Orden.find(query)
+            .populate("empresaId")
+            .populate("unidadId", "matricula") // Solo trae la matrícula
+            .populate("choferId", "nombre documento"); // Solo trae nombre y documento
+
         return NextResponse.json(ordenes);
     } catch (error) {
         console.error("❌ Error obteniendo órdenes:", error);
@@ -36,6 +42,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
+        await connectMongoDB();
         const body = await req.json();
         console.log("📥 Datos recibidos en API:", body);
 
@@ -43,26 +50,38 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "empresaId es requerido" }, { status: 400 });
         }
 
-        // Si empresaId ya se almacena como string, no lo conviertas a ObjectId
+        // ✅ GENERACIÓN DE ID ÚNICO ALFANUMÉRICO DE 6 CARACTERES
+        const idUnico = nanoid(6).replace(/[^A-Z0-9]/g, "");
+
+        // ✅ ASIGNAR UNIDAD SI NO SE ENVÍA UNA
+        let unidadAsignada = null;
+        if (!body.unidadId) {
+            unidadAsignada = await Unidad.findOne({ empresaId: body.empresaId });
+        }
+
+        // ✅ ASIGNAR CHOFER SI NO SE ENVÍA UNO
+        let choferAsignado = null;
+        if (!body.choferId) {
+            choferAsignado = await Chofer.findOne({ empresaId: body.empresaId });
+        }
+
+        // ✅ CREAR LA ORDEN ASEGURANDO QUE TENGA UNIDAD Y CHOFER
         const nuevaOrden = new Orden({
+            idUnico,
             empresaId: mongoose.isValidObjectId(body.empresaId)
                 ? new mongoose.Types.ObjectId(body.empresaId)
-                : body.empresaId,  // Si es string, usarlo directamente
-            unidadId: mongoose.isValidObjectId(body.unidadId)
-                ? new mongoose.Types.ObjectId(body.unidadId)
-                : body.unidadId,
-            choferId: mongoose.isValidObjectId(body.choferId)
-                ? new mongoose.Types.ObjectId(body.choferId)
-                : body.choferId,
+                : body.empresaId,
+            unidadId: body.unidadId || unidadAsignada?._id,
+            choferId: body.choferId || choferAsignado?._id,
             producto: body.producto,
             litros: body.litros,
             monto: body.monto,
             fechaCarga: body.fechaCarga,
-            estado: "PENDIENTE_AUTORIZACION",
+            estado: "PENDIENTE",
         });
 
         await nuevaOrden.save();
-        console.log("✅ Orden guardada en BD:", nuevaOrden);
+        console.log("✅ Orden guardada con ID:", idUnico);
 
         return NextResponse.json(nuevaOrden);
     } catch (error) {
@@ -83,7 +102,7 @@ export async function PATCH(req: Request) {
         }
 
         // Verifica que el estado sea válido
-        const estadosValidos = ["PENDIENTE_AUTORIZACION", "PENDIENTE_CARGA", "CARGADA"];
+        const estadosValidos = ["PENDIENTE", "AUTORIZADA", "CARGADA"];
         if (!estadosValidos.includes(nuevoEstado)) {
             return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
         }
@@ -93,7 +112,8 @@ export async function PATCH(req: Request) {
             id,
             { estado: nuevoEstado },
             { new: true }
-        );
+        ).populate("unidadId", "matricula") // Asegura que se traiga la matrícula
+         .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
 
         if (!ordenActualizada) {
             return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });

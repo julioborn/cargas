@@ -1,35 +1,31 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose from "mongoose";
+import { customAlphabet } from "nanoid";
 
-interface IOrden extends Document {
-    empresaId: mongoose.Types.ObjectId;
-    fechaEmision: Date;
-    fechaCarga?: Date;
-    unidadId: mongoose.Types.ObjectId;
-    choferId: mongoose.Types.ObjectId;
-    producto: "GASOIL_G2" | "GASOIL_G3" | "NAFTA_SUPER" | "NAFTA_ECO";
-    litros?: number;
-    monto?: number;
-    estado: "PENDIENTE_AUTORIZACION" | "PENDIENTE_CARGA" | "CARGA_COMPLETADA";
-}
+const nanoid = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 6); // Solo letras mayúsculas y números
 
-const OrdenSchema = new Schema<IOrden>({
-    empresaId: { type: Schema.Types.ObjectId, ref: "Empresa", required: true }, // ✅ Asegurar que es requerido
+const OrdenSchema = new mongoose.Schema({
+    empresaId: { type: mongoose.Schema.Types.ObjectId, ref: "Empresa", required: true },
+    unidadId: { type: mongoose.Schema.Types.ObjectId, ref: "Unidad" },
+    choferId: { type: mongoose.Schema.Types.ObjectId, ref: "Chofer" },
+    producto: { type: String, required: true },
+    litros: { type: Number, required: true },
+    monto: { type: Number, required: true },
     fechaEmision: { type: Date, default: Date.now },
     fechaCarga: { type: Date },
-    unidadId: { type: Schema.Types.ObjectId, ref: "Unidad", required: true },
-    choferId: { type: Schema.Types.ObjectId, ref: "Chofer", required: true },
-    producto: {
-        type: String,
-        enum: ["GASOIL_G2", "GASOIL_G3", "NAFTA_SUPER", "NAFTA_ECO"],
-        required: true,
+    estado: { 
+        type: String, 
+        enum: ["PENDIENTE", "AUTORIZADA", "CARGADA"], 
+        default: "PENDIENTE" 
     },
-    litros: { type: Number },
-    monto: { type: Number },
-    estado: {
-        type: String,
-        enum: ["PENDIENTE_AUTORIZACION", "PENDIENTE_CARGA", "CARGA_COMPLETADA"],
-        default: "PENDIENTE_AUTORIZACION",
-    },
+    codigoOrden: { type: String, unique: true } 
 });
 
-export default mongoose.models.Orden || mongoose.model<IOrden>("Orden", OrdenSchema, "ordenes");
+// Middleware para generar el código antes de guardar
+OrdenSchema.pre("save", function (next) {
+    if (!this.codigoOrden) {
+        this.codigoOrden = nanoid();
+    }
+    next();
+});
+
+export default mongoose.models.Orden || mongoose.model("Orden", OrdenSchema, 'ordenes');
