@@ -3,12 +3,16 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
 
 // 📌 Editar un chofer
-export async function PUT(req: NextRequest, { params }: { params: { choferId: string } }) {
+export async function PUT(req: NextRequest) {
     await connectMongoDB();
 
     try {
         const { nombre, documento } = await req.json();
-        const choferId = params.choferId; // Extraer el ID de los parámetros
+        
+        // Extraer choferId de la URL
+        const url = new URL(req.url);
+        const pathSegments = url.pathname.split("/");
+        const choferId = pathSegments[pathSegments.length - 1];
 
         if (!choferId) {
             return NextResponse.json({ error: "ID del chofer no proporcionado" }, { status: 400 });
@@ -33,11 +37,14 @@ export async function PUT(req: NextRequest, { params }: { params: { choferId: st
 }
 
 // 📌 Eliminar un chofer
-export async function DELETE(req: NextRequest, { params }: { params: { choferId: string } }) {
+export async function DELETE(req: NextRequest) {
     await connectMongoDB();
 
     try {
-        const choferId = params.choferId; // Extraer el ID de los parámetros
+        // Extraer choferId de la URL
+        const url = new URL(req.url);
+        const pathSegments = url.pathname.split("/");
+        const choferId = pathSegments[pathSegments.length - 1];
 
         if (!choferId) {
             return NextResponse.json({ error: "ID del chofer no proporcionado" }, { status: 400 });
