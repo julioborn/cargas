@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Empresa from "@/models/Empresa";
 
-// 📌 Obtener una empresa por ID
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function GET(req: NextRequest, context: any) {
+export async function GET(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
     await connectMongoDB();
 
     try {
-        const empresaId = context.params.empresaId; // ✅ Extraer el ID correctamente
+        const awaitedParams = await params; // ✅ Esperamos los parámetros correctamente
+        const empresaId = awaitedParams.empresaId;
 
         if (!empresaId) {
             return NextResponse.json({ error: "ID de la empresa no proporcionado" }, { status: 400 });
@@ -28,14 +28,14 @@ export async function GET(req: NextRequest, context: any) {
     }
 }
 
-// 📌 Editar una empresa
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
     await connectMongoDB();
 
     try {
         const { nombre, direccion } = await req.json();
-        const empresaId = context.params.empresaId;
+        const awaitedParams = await params;
+        const empresaId = awaitedParams.empresaId;
 
         if (!empresaId) {
             return NextResponse.json({ error: "ID de la empresa no proporcionado" }, { status: 400 });
@@ -60,12 +60,12 @@ export async function PUT(req: NextRequest, context: any) {
 }
 
 // 📌 Eliminar una empresa
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function DELETE(req: NextRequest, context: any) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
     await connectMongoDB();
 
     try {
-        const empresaId = context.params.empresaId;
+        const awaitedParams = await params; // ✅ Extraemos correctamente los parámetros
+        const empresaId = awaitedParams.empresaId;
 
         if (!empresaId) {
             return NextResponse.json({ error: "ID de la empresa no proporcionado" }, { status: 400 });
