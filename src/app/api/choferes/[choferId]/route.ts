@@ -3,16 +3,15 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
 
 // 📌 Editar un chofer
-export async function PUT(req: NextRequest) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
     await connectMongoDB();
 
     try {
         const { nombre, documento } = await req.json();
         
-        // Extraer choferId de la URL
-        const url = new URL(req.url);
-        const pathSegments = url.pathname.split("/");
-        const choferId = pathSegments[pathSegments.length - 1];
+        // ✅ Esperar los parámetros antes de extraer `choferId`
+        const awaitedParams = await params;
+        const choferId = awaitedParams.choferId;
 
         if (!choferId) {
             return NextResponse.json({ error: "ID del chofer no proporcionado" }, { status: 400 });
@@ -37,14 +36,13 @@ export async function PUT(req: NextRequest) {
 }
 
 // 📌 Eliminar un chofer
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
     await connectMongoDB();
 
     try {
-        // Extraer choferId de la URL
-        const url = new URL(req.url);
-        const pathSegments = url.pathname.split("/");
-        const choferId = pathSegments[pathSegments.length - 1];
+        // ✅ Esperar los parámetros antes de extraer `choferId`
+        const awaitedParams = await params;
+        const choferId = awaitedParams.choferId;
 
         if (!choferId) {
             return NextResponse.json({ error: "ID del chofer no proporcionado" }, { status: 400 });
