@@ -1,11 +1,10 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectMongoDB } from "@/lib/mongodb";
 import Usuario from "@/models/Usuario";
-import { JWT } from "next-auth/jwt";
 
-const authOptions: AuthOptions = {
+const handler = NextAuth({
     providers: [
         CredentialsProvider({
             name: "credentials",
@@ -57,7 +56,12 @@ const authOptions: AuthOptions = {
         },
 
         async session({ session, token }) {
+            if (!session.user) {
+                session.user = { id: "", name: "", email: "", role: "empresa" };
+            }
             session.user.id = token.id as string;
+            session.user.name = token.name as string;
+            session.user.email = token.email as string;
             session.user.role = token.role as "admin" | "empresa";
             return session;
         },
@@ -69,7 +73,6 @@ const authOptions: AuthOptions = {
     session: {
         strategy: "jwt",
     },
-};
+});
 
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST, authOptions };
+export { handler as GET, handler as POST };

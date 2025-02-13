@@ -204,7 +204,7 @@ export default function EmpresaDashboard() {
                     )}
 
                     {/* Botones */}
-                    <div className="flex justify-between mt-4 pt-2 border-t border-black">
+                    <div className="flex flex-col md:flex-row gap-2 mt-4 pt-2 border-t border-black w-fit">
                         {/* Unidades */}
                         <button
                             onClick={() => router.push("/unidades")}
