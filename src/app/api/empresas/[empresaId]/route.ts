@@ -3,6 +3,7 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Empresa from "@/models/Empresa";
 
 // 📌 Obtener una empresa por ID
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(req: NextRequest, { params }: { params: Record<string, string> }) {
     try {
         await connectMongoDB();
