@@ -29,7 +29,8 @@ export async function GET(req: NextRequest, context: any) {
 }
 
 // 📌 Editar una empresa
-export async function PUT(req: NextRequest, context: { params: Record<string, string> }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(req: NextRequest, context: any) {
     await connectMongoDB();
 
     try {
@@ -59,7 +60,8 @@ export async function PUT(req: NextRequest, context: { params: Record<string, st
 }
 
 // 📌 Eliminar una empresa
-export async function DELETE(req: NextRequest, context: { params: Record<string, string> }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(req: NextRequest, context: any) {
     await connectMongoDB();
 
     try {
