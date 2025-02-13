@@ -1,46 +1,84 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
-import Chofer from "@/models/Chofer";
+import Empresa from "@/models/Empresa";
 
-// 📌 Editar un chofer
+// 📌 Obtener una empresa por ID
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(req: Request, { params }: { params: { choferId: string } }) {
+export async function GET(req: NextRequest, context: any) {
     await connectMongoDB();
 
     try {
-        const { nombre, documento } = await req.json();
+        const empresaId = context.params.empresaId; // ✅ Extraer el ID correctamente
 
-        const choferActualizado = await Chofer.findByIdAndUpdate(
-            params.choferId,
-            { nombre, documento },
-            { new: true }
-        );
-
-        if (!choferActualizado) {
-            return NextResponse.json({ error: "Chofer no encontrado" }, { status: 404 });
+        if (!empresaId) {
+            return NextResponse.json({ error: "ID de la empresa no proporcionado" }, { status: 400 });
         }
 
-        return NextResponse.json({ message: "Chofer actualizado", chofer: choferActualizado }, { status: 200 });
+        const empresa = await Empresa.findById(empresaId);
+
+        if (!empresa) {
+            return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+        }
+
+        return NextResponse.json({ empresa }, { status: 200 });
 
     } catch (error) {
-        return NextResponse.json({ error: "Error al actualizar chofer" }, { status: 500 });
+        console.error("❌ Error al obtener empresa:", error);
+        return NextResponse.json({ error: "Error al obtener empresa" }, { status: 500 });
     }
 }
 
-// 📌 Eliminar un chofer
-export async function DELETE(req: Request, { params }: { params: { choferId: string } }) {
+// 📌 Editar una empresa
+export async function PUT(req: NextRequest, context: { params: Record<string, string> }) {
     await connectMongoDB();
 
     try {
-        const choferEliminado = await Chofer.findByIdAndDelete(params.choferId);
+        const { nombre, direccion } = await req.json();
+        const empresaId = context.params.empresaId;
 
-        if (!choferEliminado) {
-            return NextResponse.json({ error: "Chofer no encontrado" }, { status: 404 });
+        if (!empresaId) {
+            return NextResponse.json({ error: "ID de la empresa no proporcionado" }, { status: 400 });
         }
 
-        return NextResponse.json({ message: "Chofer eliminado" }, { status: 200 });
+        const empresaActualizada = await Empresa.findByIdAndUpdate(
+            empresaId,
+            { nombre, direccion },
+            { new: true }
+        );
+
+        if (!empresaActualizada) {
+            return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: "Empresa actualizada", empresa: empresaActualizada }, { status: 200 });
 
     } catch (error) {
-        return NextResponse.json({ error: "Error al eliminar chofer" }, { status: 500 });
+        console.error("❌ Error al actualizar empresa:", error);
+        return NextResponse.json({ error: "Error al actualizar empresa" }, { status: 500 });
+    }
+}
+
+// 📌 Eliminar una empresa
+export async function DELETE(req: NextRequest, context: { params: Record<string, string> }) {
+    await connectMongoDB();
+
+    try {
+        const empresaId = context.params.empresaId;
+
+        if (!empresaId) {
+            return NextResponse.json({ error: "ID de la empresa no proporcionado" }, { status: 400 });
+        }
+
+        const empresaEliminada = await Empresa.findByIdAndDelete(empresaId);
+
+        if (!empresaEliminada) {
+            return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: "Empresa eliminada" }, { status: 200 });
+
+    } catch (error) {
+        console.error("❌ Error al eliminar empresa:", error);
+        return NextResponse.json({ error: "Error al eliminar empresa" }, { status: 500 });
     }
 }
