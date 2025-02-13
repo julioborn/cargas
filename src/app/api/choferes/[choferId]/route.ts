@@ -10,7 +10,7 @@ export async function PUT(req: Request, context: { params: { choferId: string } 
         const { nombre, documento } = await req.json();
 
         const choferActualizado = await Chofer.findByIdAndUpdate(
-            context.params.choferId, // ✅ Cambio de "params" a "context.params"
+            context.params.choferId, // ✅ Usa `context.params.choferId`
             { nombre, documento },
             { new: true }
         );
@@ -31,7 +31,7 @@ export async function DELETE(req: Request, context: { params: { choferId: string
     await connectMongoDB();
 
     try {
-        const choferEliminado = await Chofer.findByIdAndDelete(context.params.choferId); // ✅ Cambio de "params" a "context.params"
+        const choferEliminado = await Chofer.findByIdAndDelete(context.params.choferId);
 
         if (!choferEliminado) {
             return NextResponse.json({ error: "Chofer no encontrado" }, { status: 404 });
