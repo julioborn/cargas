@@ -1,10 +1,10 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectMongoDB } from "@/lib/mongodb";
 import Usuario from "@/models/Usuario";
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
     providers: [
         CredentialsProvider({
             name: "credentials",
@@ -73,8 +73,8 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
     },
-};
+});
 
-// 🔥 Ahora exportamos `authOptions` y también NextAuth con `authOptions`
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+// ✅ EXPORTA SOLO `GET` Y `POST`
+export const GET = handler;
+export const POST = handler;
