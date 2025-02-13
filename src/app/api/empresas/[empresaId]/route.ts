@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Empresa from "@/models/Empresa";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(req: Request, { params }: { params: { empresaId?: string } }) {
     try {
         await connectMongoDB();
