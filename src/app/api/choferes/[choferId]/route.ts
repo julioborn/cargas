@@ -3,14 +3,15 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
 
 // 📌 Editar un chofer
-export async function PUT(req: Request, { params }: { params: { choferId: string } }) {
+export async function PUT(req: Request, context: { params: Record<string, string> }) {
     await connectMongoDB();
 
     try {
         const { nombre, documento } = await req.json();
+        const { choferId } = context.params; // ✅ Extraer params correctamente
 
         const choferActualizado = await Chofer.findByIdAndUpdate(
-            params.choferId, // ✅ Usa `params.choferId`
+            choferId, 
             { nombre, documento },
             { new: true }
         );
@@ -28,11 +29,13 @@ export async function PUT(req: Request, { params }: { params: { choferId: string
 }
 
 // 📌 Eliminar un chofer
-export async function DELETE(req: Request, { params }: { params: { choferId: string } }) {
+export async function DELETE(req: Request, context: { params: Record<string, string> }) {
     await connectMongoDB();
 
     try {
-        const choferEliminado = await Chofer.findByIdAndDelete(params.choferId);
+        const { choferId } = context.params; // ✅ Extraer params correctamente
+
+        const choferEliminado = await Chofer.findByIdAndDelete(choferId);
 
         if (!choferEliminado) {
             return NextResponse.json({ error: "Chofer no encontrado" }, { status: 404 });
