@@ -3,7 +3,7 @@ import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
 
 // 📌 Editar un chofer
-export async function PUT(req: NextRequest, { params }: { params: { choferId?: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: { choferId: string } }) {
     await connectMongoDB();
 
     try {
@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: { choferId?: s
 }
 
 // 📌 Eliminar un chofer
-export async function DELETE(req: NextRequest, { params }: { params: { choferId?: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { choferId: string } }) {
     await connectMongoDB();
 
     try {
