@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
+import { NextRequest } from "next/server"; // ✅ Importar NextRequest
 
 // 📌 Editar un chofer
-export async function PUT(req: Request, context: { params: Record<string, string> }) {
+export async function PUT(req: NextRequest, { params }: { params: { choferId: string } }) {
     await connectMongoDB();
 
     try {
         const { nombre, documento } = await req.json();
-        const { choferId } = context.params; // ✅ Extraer params correctamente
+        const { choferId } = params; // ✅ Extraer params correctamente
 
         const choferActualizado = await Chofer.findByIdAndUpdate(
             choferId, 
@@ -29,11 +30,11 @@ export async function PUT(req: Request, context: { params: Record<string, string
 }
 
 // 📌 Eliminar un chofer
-export async function DELETE(req: Request, context: { params: Record<string, string> }) {
+export async function DELETE(req: NextRequest, { params }: { params: { choferId: string } }) {
     await connectMongoDB();
 
     try {
-        const { choferId } = context.params; // ✅ Extraer params correctamente
+        const { choferId } = params; // ✅ Extraer params correctamente
 
         const choferEliminado = await Chofer.findByIdAndDelete(choferId);
 
