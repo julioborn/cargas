@@ -3,7 +3,6 @@ import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
 import { Inter } from "next/font/google";
-import FCMHandler from "@/components/FCMHandler"; // 🔥 Importa el nuevo componente
 
 export const metadata: Metadata = {
   title: "Cargas",
@@ -13,13 +12,17 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
-  manifest: "/manifest.json",
-  themeColor: "#000000",
+  manifest: "/manifest.json", // 🔥 Agregamos el manifest aquí
+  themeColor: "#000000", // 🔥 Asegura que los navegadores móviles detecten el color correcto
 };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <AuthProvider>
       <html lang="es">
@@ -29,7 +32,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </head>
         <body className={`${inter.variable} antialiased`}>
           <Header />
-          <FCMHandler /> {/* 🔥 Agregamos el componente para manejar Firebase */}
           {children}
         </body>
       </html>
