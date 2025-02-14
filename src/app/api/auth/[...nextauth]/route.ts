@@ -31,6 +31,9 @@ const handler = NextAuth({
             },
         }),
     ],
+    session: {
+        strategy: "jwt", // ✅ Forzar JWT para evitar pérdida de sesión en Vercel
+    },
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
@@ -39,16 +42,28 @@ const handler = NextAuth({
             }
             return token;
         },
-
         async session({ session, token }) {
             session.user.id = token.id as string;
             session.user.role = token.role as "admin" | "empresa";
             return session;
         },
     },
-    pages: { signIn: "/login" },
-    secret: process.env.NEXTAUTH_SECRET,
-    session: { strategy: "jwt" },
+    pages: {
+        signIn: "/login",
+    },
+    secret: process.env.NEXTAUTH_SECRET, // ✅ Asegurarse de que esté en Vercel
+    useSecureCookies: process.env.NODE_ENV === "production",
+    cookies: {
+        sessionToken: {
+            name: `__Secure-next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NODE_ENV === "production",
+            },
+        },
+    },
 });
 
-export { handler as GET, handler as POST }; // ✅ NO EXPORTES authOptions
+export { handler as GET, handler as POST };
