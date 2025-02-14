@@ -32,7 +32,7 @@ const handler = NextAuth({
         }),
     ],
     session: {
-        strategy: "jwt", // ✅ Forzar JWT para evitar pérdida de sesión en Vercel
+        strategy: "jwt", // 🔥 Usa JWT para evitar sesiones perdidas
     },
     callbacks: {
         async jwt({ token, user }) {
@@ -51,11 +51,13 @@ const handler = NextAuth({
     pages: {
         signIn: "/login",
     },
-    secret: process.env.NEXTAUTH_SECRET, // ✅ Asegurarse de que esté en Vercel
+    secret: process.env.NEXTAUTH_SECRET,
     useSecureCookies: process.env.NODE_ENV === "production",
     cookies: {
         sessionToken: {
-            name: `__Secure-next-auth.session-token`,
+            name: process.env.NODE_ENV === "production"
+                ? "__Secure-next-auth.session-token"
+                : "next-auth.session-token",
             options: {
                 httpOnly: true,
                 sameSite: "lax",
