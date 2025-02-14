@@ -15,16 +15,17 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
                 await connectMongoDB();
 
-                const user = await Usuario.findOne({ email: credentials?.email });
+                if (!credentials?.email || !credentials?.password) {
+                    throw new Error("Credenciales inválidas");
+                }
+
+                const user = await Usuario.findOne({ email: credentials.email });
 
                 if (!user) {
                     throw new Error("Usuario no encontrado");
                 }
 
-                const isValidPassword = await bcrypt.compare(
-                    credentials?.password ?? "",
-                    user.password ?? ""
-                );
+                const isValidPassword = await bcrypt.compare(credentials.password, user.password);
 
                 if (!isValidPassword) {
                     throw new Error("Contraseña incorrecta");
@@ -40,21 +41,24 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user }: { token: any; user?: any }) {
+        async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
+                token.name = user.name;
+                token.email = user.email;
                 token.role = user.role;
             }
             return token;
         },
-        async session({ session, token }: { session: any; token: any }) {
-            if (!session.user) {
-                session.user = { id: "", name: "", email: "", role: "empresa" };
+        async session({ session, token }) {
+            if (token) {
+                session.user = {
+                    id: token.id as string,
+                    name: token.name as string,
+                    email: token.email as string,
+                    role: token.role as "admin" | "empresa",
+                };
             }
-            session.user.id = token.id as string;
-            session.user.name = token.name as string;
-            session.user.email = token.email as string;
-            session.user.role = token.role as "admin" | "empresa";
             return session;
         },
     },
@@ -62,4 +66,8 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
     },
+    pages: {
+        signIn: "/login",
+    },
+    debug: process.env.NODE_ENV === "development", // 🔍 Modo debug en desarrollo
 };
