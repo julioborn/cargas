@@ -3,7 +3,6 @@ import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
 import { Inter } from "next/font/google";
-import FirebaseNotifications from "@/components/FirebaseNotifications"; // 🔥 Cliente separado
 
 export const metadata: Metadata = {
   title: "Cargas",
@@ -12,21 +11,30 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  manifest: "/manifest.json",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
+  manifest: "/manifest.json", // 🔥 Agregamos el manifest aquí
+  themeColor: "#000000", // 🔥 Asegura que los navegadores móviles detecten el color correcto
 };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="es"> {/* ✅ html debe estar en el Server Component */}
-      <body className={`${inter.variable} antialiased`}>
-        <AuthProvider>
-          <FirebaseNotifications /> {/* ✅ Ahora está correctamente dentro del árbol del cliente */}
+    <AuthProvider>
+      <html lang="es">
+        <head>
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="theme-color" content="#000000" />
+        </head>
+        <body className={`${inter.variable} antialiased`}>
           <Header />
           {children}
-        </AuthProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </AuthProvider>
   );
 }

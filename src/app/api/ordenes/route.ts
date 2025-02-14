@@ -5,7 +5,6 @@ import Orden from "@/models/Orden";
 import Unidad from "@/models/Unidad";
 import Chofer from "@/models/Chofer";
 import { connectMongoDB } from "@/lib/mongodb";
-import { messaging } from "@/lib/firebaseAdmin"; // 🔥 Importamos Firebase Admin
 
 export async function GET(req: Request) {
     try {
@@ -84,19 +83,6 @@ export async function POST(req: Request) {
         await nuevaOrden.save();
         console.log("✅ Orden guardada con ID:", idUnico);
 
-        // 🔥 Enviar notificación al administrador (si el token está disponible)
-        const adminToken = process.env.ADMIN_FCM_TOKEN;
-        if (adminToken) {
-            await messaging.send({
-                token: adminToken,
-                notification: {
-                    title: "🚛 Nueva orden creada",
-                    body: `Se ha generado una nueva orden para ${nuevaOrden.producto}.`,
-                },
-            });
-            console.log("✅ Notificación enviada al administrador.");
-        }
-
         return NextResponse.json(nuevaOrden);
     } catch (error) {
         console.error("❌ Error al crear orden:", error);
@@ -127,7 +113,7 @@ export async function PATCH(req: Request) {
             { estado: nuevoEstado },
             { new: true }
         ).populate("unidadId", "matricula") // Asegura que se traiga la matrícula
-            .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
+         .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
 
         if (!ordenActualizada) {
             return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
