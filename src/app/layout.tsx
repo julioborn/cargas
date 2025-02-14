@@ -1,4 +1,3 @@
-"use client";
 import { useEffect } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
