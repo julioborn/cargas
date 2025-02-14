@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, MessagePayload } from "firebase/messaging";
 
-// 📌 Configuración de Firebase usando variables de entorno
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -12,19 +11,23 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// 🔥 Inicializa Firebase
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+let messaging: any;
+
+if (typeof window !== "undefined") {
+    const app = initializeApp(firebaseConfig);
+    messaging = getMessaging(app);
+}
 
 /**
- * ✅ Obtener el token de FCM
+ * ✅ Obtener el token de FCM solo si estamos en el cliente
  */
 export const getFCMToken = async (): Promise<string | null> => {
+    if (typeof window === "undefined") return null;
+
     try {
         const token = await getToken(messaging, {
-            vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY, // 🔹 Clave VAPID
+            vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY,
         });
-
         return token || null;
     } catch (error) {
         console.error("❌ Error obteniendo el token de FCM:", error);
@@ -33,11 +36,16 @@ export const getFCMToken = async (): Promise<string | null> => {
 };
 
 /**
- * ✅ Escuchar notificaciones en primer plano
+ * ✅ Escuchar notificaciones solo si estamos en el cliente
  */
 export const onMessageListener = (): Promise<MessagePayload> =>
     new Promise((resolve, reject) => {
-        onMessage(messaging, (payload) => {
-            resolve(payload);
-        });
+        if (typeof window === "undefined") return;
+        try {
+            onMessage(messaging, (payload) => {
+                resolve(payload);
+            });
+        } catch (error) {
+            reject(error);
+        }
     });
