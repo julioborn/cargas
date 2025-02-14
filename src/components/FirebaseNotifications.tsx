@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 import { getFCMToken, onMessageListener } from "@/lib/firebase";
-import { MessagePayload } from "firebase/messaging";
+import type { MessagePayload } from "firebase/messaging"; // ✅ Importa el tipo
 
 export default function FirebaseNotifications() {
     useEffect(() => {
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/firebase-messaging-sw.js")
+            navigator.serviceWorker
+                .register("/firebase-messaging-sw.js")
                 .then((registration) => {
                     console.log("✅ Service Worker registrado:", registration);
                 })
@@ -16,15 +17,20 @@ export default function FirebaseNotifications() {
                 });
         }
 
-        getFCMToken().then((token) => {
-            if (token) {
-                console.log("✅ Token de FCM obtenido:", token);
-                localStorage.setItem("FCM_TOKEN", token);
-            }
-        });
+        getFCMToken()
+            .then((token) => {
+                if (token) {
+                    console.log("✅ Token de FCM obtenido:", token);
+                    localStorage.setItem("FCM_TOKEN", token);
+                } else {
+                    console.warn("⚠️ No se pudo obtener el token de FCM.");
+                }
+            })
+            .catch((error) => console.error("❌ Error obteniendo el token:", error));
 
+        // ✅ Escuchar notificaciones en primer plano con tipado correcto
         onMessageListener()
-            .then((payload: MessagePayload) => {
+            .then((payload: MessagePayload) => { // ✅ Ahora `payload` tiene el tipo correcto
                 console.log("📩 Notificación recibida:", payload);
                 alert(`📢 Notificación: ${payload.notification?.title}`);
             })
@@ -32,5 +38,5 @@ export default function FirebaseNotifications() {
 
     }, []);
 
-    return null; // No renderiza nada en la UI, solo ejecuta los efectos
+    return null; // ✅ No renderiza nada en la UI
 }

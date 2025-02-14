@@ -19,14 +19,14 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <html lang="es">
-        <body className={`${inter.variable} antialiased`}>
-          <FirebaseNotifications /> {/* ✅ Ahora las notificaciones están bien manejadas */}
+    <html lang="es"> {/* ✅ html debe estar en el Server Component */}
+      <body className={`${inter.variable} antialiased`}>
+        <AuthProvider>
+          <FirebaseNotifications /> {/* ✅ Ahora está correctamente dentro del árbol del cliente */}
           <Header />
           {children}
-        </body>
-      </html>
-    </AuthProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

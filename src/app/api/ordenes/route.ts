@@ -5,6 +5,7 @@ import Orden from "@/models/Orden";
 import Unidad from "@/models/Unidad";
 import Chofer from "@/models/Chofer";
 import { connectMongoDB } from "@/lib/mongodb";
+import { messaging } from "@/lib/firebaseAdmin"; // 🔥 Importamos Firebase Admin
 
 export async function GET(req: Request) {
     try {
@@ -83,12 +84,30 @@ export async function POST(req: Request) {
         await nuevaOrden.save();
         console.log("✅ Orden guardada con ID:", idUnico);
 
+        // 🔥 Enviar notificación al administrador
+        const adminToken = process.env.ADMIN_FCM_TOKEN; // El token debe estar en tus variables de entorno
+        if (adminToken) {
+            const message = {
+                token: adminToken,
+                notification: {
+                    title: "🚛 Nueva orden creada",
+                    body: `Se ha generado una nueva orden para ${nuevaOrden.producto}.`,
+                },
+            };
+
+            await messaging.send(message);
+            console.log("✅ Notificación enviada al administrador.");
+        } else {
+            console.warn("⚠️ No se encontró el token del administrador.");
+        }
+
         return NextResponse.json(nuevaOrden);
     } catch (error) {
         console.error("❌ Error al crear orden:", error);
         return NextResponse.json({ error: "Error al crear la orden" }, { status: 500 });
     }
 }
+
 
 export async function PATCH(req: Request) {
     try {
