@@ -21,7 +21,7 @@ interface Chofer {
 }
 
 export default function Unidades() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const userId = session?.user?.id;
     const router = useRouter();
     const [unidades, setUnidades] = useState<Unidad[]>([]);

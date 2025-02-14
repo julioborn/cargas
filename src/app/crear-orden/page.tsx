@@ -34,7 +34,7 @@ interface Orden {
 }
 
 export default function CrearOrden() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const userId = session?.user?.id;
     const [ordenes, setOrdenes] = useState<Orden[]>([]);
     const [unidades, setUnidades] = useState<Unidad[]>([]);

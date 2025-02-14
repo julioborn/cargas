@@ -1,26 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Empresa from "@/models/Empresa";
 
-// 📌 Obtener una empresa por ID
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function GET(req: NextRequest, { params }: { params: Record<string, string> }) {
+export async function GET(req: Request, { params }: { params: { empresaId?: string } }) {
     try {
         await connectMongoDB();
 
-        const empresaId = params.empresaId;
-
-        if (!empresaId) {
+        if (!params?.empresaId) {
             console.log("❌ Error: No se proporcionó empresaId.");
             return NextResponse.json({ error: "No se proporcionó empresaId" }, { status: 400 });
         }
 
+        const empresaId = params.empresaId;
         console.log(`🔍 Buscando empresa con ID: ${empresaId}`);
+
         const empresa = await Empresa.findById(empresaId);
 
         if (!empresa) {
             console.log(`❌ Empresa no encontrada para el ID: ${empresaId}`);
-            return NextResponse.json({ error: "Empresa no encontrada", empresa: null }, { status: 404 });
+            return NextResponse.json({ error: "Empresa no encontrada", empresa: null }, { status: 200 });
         }
 
         console.log("✅ Empresa encontrada:", empresa);
@@ -32,24 +30,22 @@ export async function GET(req: NextRequest, { params }: { params: Record<string,
     }
 }
 
-// 📌 Editar una empresa
-export async function PUT(req: NextRequest, { params }: { params: Record<string, string> }) {
+export async function PUT(req: Request, { params }: { params: { empresaId?: string } }) {
     try {
         await connectMongoDB();
 
-        const empresaId = params.empresaId;
-
-        if (!empresaId) {
+        if (!params.empresaId) {
             return NextResponse.json({ error: "Falta el ID de la empresa" }, { status: 400 });
         }
 
         const { nombre, ruc_cuit, direccion, telefono } = await req.json();
 
-        const empresa = await Empresa.findByIdAndUpdate(
-            empresaId, 
-            { nombre, ruc_cuit, direccion, telefono }, 
-            { new: true }
-        );
+        const empresa = await Empresa.findByIdAndUpdate(params.empresaId, {
+            nombre,
+            ruc_cuit,
+            direccion,
+            telefono
+        }, { new: true });
 
         if (!empresa) {
             return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
@@ -62,18 +58,10 @@ export async function PUT(req: NextRequest, { params }: { params: Record<string,
     }
 }
 
-// 📌 Eliminar una empresa
-export async function DELETE(req: NextRequest, { params }: { params: Record<string, string> }) {
+export async function DELETE(req: Request, { params }: { params: { empresaId: string } }) {
     try {
         await connectMongoDB();
-
-        const empresaId = params.empresaId;
-
-        if (!empresaId) {
-            return NextResponse.json({ error: "Falta el ID de la empresa" }, { status: 400 });
-        }
-
-        const empresa = await Empresa.findByIdAndDelete(empresaId);
+        const empresa = await Empresa.findByIdAndDelete(params.empresaId);
 
         if (!empresa) {
             return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });

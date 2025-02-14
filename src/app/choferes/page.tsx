@@ -13,7 +13,7 @@ interface Chofer {
 }
 
 export default function Choferes() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const userId = session?.user?.id;
     const router = useRouter();
     const [choferes, setChoferes] = useState<Chofer[]>([]);

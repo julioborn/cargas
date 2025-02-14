@@ -14,21 +14,13 @@ const handler = NextAuth({
             },
             async authorize(credentials) {
                 await connectMongoDB();
-
                 const user = await Usuario.findOne({ email: credentials?.email });
 
-                if (!user) {
-                    throw new Error("Usuario no encontrado");
-                }
+                if (!user) throw new Error("Usuario no encontrado");
 
-                const isValidPassword = await bcrypt.compare(
-                    credentials?.password ?? "",
-                    user.password ?? ""
-                );
+                const isValidPassword = await bcrypt.compare(credentials?.password ?? "", user.password ?? "");
 
-                if (!isValidPassword) {
-                    throw new Error("Contraseña incorrecta");
-                }
+                if (!isValidPassword) throw new Error("Contraseña incorrecta");
 
                 return {
                     id: user._id.toString(),
@@ -47,24 +39,16 @@ const handler = NextAuth({
             }
             return token;
         },
+
         async session({ session, token }) {
-            session.user = session.user || { id: "", name: "", email: "", role: "empresa" };
             session.user.id = token.id as string;
-            session.user.name = token.name as string;
-            session.user.email = token.email as string;
             session.user.role = token.role as "admin" | "empresa";
             return session;
         },
     },
-    pages: {
-        signIn: "/login",
-    },
+    pages: { signIn: "/login" },
     secret: process.env.NEXTAUTH_SECRET,
-    session: {
-        strategy: "jwt",
-    },
+    session: { strategy: "jwt" },
 });
 
-// ✅ EXPORTA SOLO GET Y POST (NO EXPORTES `authOptions`)
-export const GET = handler;
-export const POST = handler;
+export { handler as GET, handler as POST }; // ✅ NO EXPORTES authOptions
