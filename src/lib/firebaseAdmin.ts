@@ -1,15 +1,18 @@
 import admin from "firebase-admin";
 
-const serviceAccount = {
-    project_id: process.env.FIREBASE_ADMIN_PROJECT_ID,
-    private_key: process.env.FIREBASE_ADMIN_KEY?.replace(/\\n/g, "\n"), // 🔥 Corrige los saltos de línea
-    client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-};
-
 if (!admin.apps.length) {
+    const firebaseAdminConfig = JSON.parse(process.env.FIREBASE_ADMIN_KEY || "{}");
+
+    // 🔥 Corrige la clave reemplazando `\\n` por saltos de línea reales
+    if (firebaseAdminConfig.private_key) {
+        firebaseAdminConfig.private_key = firebaseAdminConfig.private_key.replace(/\\n/g, "\n");
+    }
+
     admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+        credential: admin.credential.cert(firebaseAdminConfig),
     });
 }
 
+// ✅ Exportamos el servicio de messaging correctamente
 export const messaging = admin.messaging();
+export default admin;

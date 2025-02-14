@@ -84,21 +84,17 @@ export async function POST(req: Request) {
         await nuevaOrden.save();
         console.log("✅ Orden guardada con ID:", idUnico);
 
-        // 🔥 Enviar notificación al administrador
-        const adminToken = process.env.ADMIN_FCM_TOKEN; // El token debe estar en tus variables de entorno
+        // 🔥 Enviar notificación al administrador (si el token está disponible)
+        const adminToken = process.env.ADMIN_FCM_TOKEN;
         if (adminToken) {
-            const message = {
+            await messaging.send({
                 token: adminToken,
                 notification: {
                     title: "🚛 Nueva orden creada",
                     body: `Se ha generado una nueva orden para ${nuevaOrden.producto}.`,
                 },
-            };
-
-            await messaging.send(message);
+            });
             console.log("✅ Notificación enviada al administrador.");
-        } else {
-            console.warn("⚠️ No se encontró el token del administrador.");
         }
 
         return NextResponse.json(nuevaOrden);
@@ -107,7 +103,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Error al crear la orden" }, { status: 500 });
     }
 }
-
 
 export async function PATCH(req: Request) {
     try {
@@ -132,7 +127,7 @@ export async function PATCH(req: Request) {
             { estado: nuevoEstado },
             { new: true }
         ).populate("unidadId", "matricula") // Asegura que se traiga la matrícula
-         .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
+            .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
 
         if (!ordenActualizada) {
             return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
