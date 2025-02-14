@@ -1,5 +1,6 @@
 import admin from "firebase-admin";
 
+// 🔥 Verifica que Firebase no esté ya inicializado
 if (!admin.apps.length) {
     const firebaseAdminConfig = JSON.parse(process.env.FIREBASE_ADMIN_KEY || "{}");
 
