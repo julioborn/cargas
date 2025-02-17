@@ -4,7 +4,7 @@ import AuthProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
 import { Inter } from "next/font/google";
 
-// 🔥 Definimos `viewport` correctamente según Next.js 14
+// ✅ Exportamos `viewport` correctamente
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -12,10 +12,9 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// 🔥 Definimos `themeColor` de forma separada
-export const themeColor = "#000000";
+// ❌ ELIMINAMOS `export const themeColor` porque Next.js 14 no lo permite
 
-// 🔥 Mantener el metadata sin `viewport` ni `themeColor`
+// ✅ `metadata` sin `viewport` ni `themeColor`
 export const metadata: Metadata = {
   title: "Cargas",
   description: "App para gestionar órdenes de carga",
@@ -38,6 +37,7 @@ export default function RootLayout({
       <html lang="es">
         <head>
           <link rel="manifest" href="/manifest.json" />
+          {/* ✅ Mantenemos `theme-color` aquí dentro de `<head>` */}
           <meta name="theme-color" content="#000000" />
         </head>
         <body className={`${inter.variable} antialiased`}>
