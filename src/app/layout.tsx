@@ -3,6 +3,8 @@ import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
 import { Inter } from "next/font/google";
+import { viewport } from "./generateViewport";
+import { themeColor } from "./generateThemeColor";
 
 export const metadata: Metadata = {
   title: "Cargas",
@@ -17,6 +19,9 @@ export const metadata: Metadata = {
 };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+
+export const generateViewport = () => viewport;
+export const generateThemeColor = () => themeColor;
 
 export default function RootLayout({
   children,
