@@ -45,5 +45,3 @@ src/lib/firebase.ts
 src/lib/firebaseAdmin.ts
 src/components/FirebaseNotifications.tsx
 public/firebase-messaging-sw.js
-src/app/generateThemeColor.ts
-src/app/generateViewport.ts

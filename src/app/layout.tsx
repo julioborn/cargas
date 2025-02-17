@@ -1,11 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
 import { Inter } from "next/font/google";
-import { viewport } from "./viewport";
-import { themeColor } from "./themeColor";
 
+// 🔥 Definimos `viewport` correctamente según Next.js 14
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
+// 🔥 Definimos `themeColor` de forma separada
+export const themeColor = "#000000";
+
+// 🔥 Mantener el metadata sin `viewport` ni `themeColor`
 export const metadata: Metadata = {
   title: "Cargas",
   description: "App para gestionar órdenes de carga",
@@ -13,15 +23,10 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
-  manifest: "/manifest.json", // 🔥 Agregamos el manifest aquí
-  themeColor: "#000000", // 🔥 Asegura que los navegadores móviles detecten el color correcto
+  manifest: "/manifest.json",
 };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-
-export const generateViewport = () => viewport;
-export const generateThemeColor = () => themeColor;
 
 export default function RootLayout({
   children,
