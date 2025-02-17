@@ -10,64 +10,78 @@ export const authOptions: NextAuthOptions = {
             name: "credentials",
             credentials: {
                 email: { label: "Email", type: "email", placeholder: "tu@email.com" },
-                password: { label: "Contraseña", type: "password" },
+                password: { label: "Contraseña" },
             },
             async authorize(credentials) {
                 await connectMongoDB();
-
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Credenciales inválidas");
-                }
-
-                const user = await Usuario.findOne({ email: credentials.email });
+                const user = await Usuario.findOne({ email: credentials?.email });
 
                 if (!user) {
-                    throw new Error("Usuario no encontrado");
+                    console.error("❌ Usuario no encontrado:", credentials?.email);
+                    return null;
                 }
 
-                const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+                const isValidPassword = await bcrypt.compare(credentials?.password ?? "", user.password ?? "");
 
                 if (!isValidPassword) {
-                    throw new Error("Contraseña incorrecta");
+                    console.error("❌ Contraseña incorrecta para:", credentials?.email);
+                    return null;
                 }
+
+                console.log("✅ Usuario autenticado:", user.email, "Rol:", user.rol);
 
                 return {
                     id: user._id.toString(),
                     email: user.email,
                     name: user.nombre,
                     role: user.rol,
+                    empresaId: user.empresaId ?? null,
                 };
             },
         }),
     ],
+    session: { strategy: "jwt" },
+    jwt: {
+        secret: process.env.NEXTAUTH_SECRET,
+    },
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.name = user.name;
                 token.email = user.email;
+                token.name = user.name;
                 token.role = user.role;
+                token.empresaId = user.empresaId ?? null;
             }
+            console.log("🔥 JWT generado en authOptions:", token);
             return token;
         },
         async session({ session, token }) {
-            if (token) {
-                session.user = {
-                    id: token.id as string,
-                    name: token.name as string,
-                    email: token.email as string,
-                    role: token.role as "admin" | "empresa",
-                };
-            }
+            session.user = {
+                id: token.id as string,
+                email: token.email as string,
+                name: token.name as string,
+                role: token.role as "admin" | "empresa",
+                empresaId: token.empresaId as string | null,
+            };
+            console.log("✅ Sesión generada:", session);
             return session;
         },
     },
     secret: process.env.NEXTAUTH_SECRET,
-    session: {
-        strategy: "jwt",
+    pages: { signIn: "/login" },
+    cookies: {
+        sessionToken: {
+            name: process.env.NODE_ENV === "production"
+                ? "__Secure-next-auth.session-token"
+                : "next-auth.session-token",
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NODE_ENV === "production",
+            },
+        },
     },
-    pages: {
-        signIn: "/login",
-    },
-    debug: process.env.NODE_ENV === "development", // 🔍 Modo debug en desarrollo
+    debug: process.env.NODE_ENV === "development",
 };

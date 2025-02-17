@@ -3,8 +3,8 @@ import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
 import { Inter } from "next/font/google";
-import { viewport } from "./generateViewport";
-import { themeColor } from "./generateThemeColor";
+import { viewport } from "./viewport";
+import { themeColor } from "./themeColor";
 
 export const metadata: Metadata = {
   title: "Cargas",

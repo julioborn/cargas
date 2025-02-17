@@ -27,16 +27,21 @@ export default function LoginPage() {
         if (result?.error) {
             setError("Credenciales incorrectas");
         } else {
-            const res = await fetch("/api/auth/session");
-            const session = await res.json();
+            await fetch("/api/auth/session");
+            router.refresh(); // 🔥 Refresca la página para asegurarse de que la sesión se actualiza correctamente
 
-            console.log("🔍 Sesión obtenida:", session);
+            setTimeout(async () => {
+                const res = await fetch("/api/auth/session");
+                const session = await res.json();
 
-            if (session?.user?.role === "admin") {
-                router.push("/dashboard");
-            } else if (session?.user?.role === "empresa") {
-                router.push("/empresa-dashboard");
-            }
+                console.log("🔍 Sesión después de login:", session);
+
+                if (session?.user?.role === "admin") {
+                    router.push("/dashboard");
+                } else if (session?.user?.role === "empresa") {
+                    router.push("/empresa-dashboard");
+                }
+            }, 100);
         }
     };
 
