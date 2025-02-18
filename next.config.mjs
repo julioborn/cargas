@@ -9,9 +9,6 @@ const withPWA = nextPWA({
 
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    appDir: true, // 🔹 Asegura que Next.js funcione bien con la App Router
-  },
 };
 
 export default withPWA(nextConfig);
