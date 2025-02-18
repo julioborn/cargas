@@ -27,7 +27,7 @@ interface Orden {
     choferId: string | Chofer;
     producto: string;
     litros?: number;
-    monto?: number;
+    importe?: number;
     estado: string;
     fechaEmision: string;
     fechaCarga: string;
@@ -45,7 +45,9 @@ export default function CrearOrden() {
     const [selectedChofer, setSelectedChofer] = useState<string>("");
     const [selectedProducto, setSelectedProducto] = useState<string>("GASOIL_G2");
     const [litros, setLitros] = useState<string>("");
-    const [monto, setMonto] = useState<string>("");
+    const [importe, setImporte] = useState<string>("");
+    const [tanqueLleno, setTanqueLleno] = useState<boolean>(false);
+    const [condicionPago, setCondicionPago] = useState<"Cuenta Corriente" | "Pago Anticipado">("Cuenta Corriente");
     const [fechaCarga, setFechaCarga] = useState<string>("");
     const router = useRouter();
 
@@ -123,15 +125,17 @@ export default function CrearOrden() {
         }
 
         const nuevaOrden = {
-            empresaId, // 🔥 Asegurar que se envía
+            empresaId,
             unidadId: selectedUnidad,
             choferId: selectedChofer,
             producto: selectedProducto,
-            litros: litros ? parseFloat(litros) : undefined,
-            monto: monto ? parseFloat(monto) : undefined,
+            litros: tanqueLleno ? undefined : litros ? parseFloat(litros) : undefined,
+            importe: tanqueLleno ? undefined : importe ? parseFloat(importe) : undefined,
+            tanqueLleno,
+            condicionPago,
             fechaCarga: fechaCarga || undefined,
             estado: "PENDIENTE",
-        };
+        };        
 
         console.log("📤 Enviando orden a la API:", nuevaOrden); // 🔥 Verificar en consola
 
@@ -149,16 +153,40 @@ export default function CrearOrden() {
             Swal.fire("¡Orden Creada!", "La orden ha sido registrada correctamente.", "success").then(() => {
                 router.push("/ordenes"); // 🔥 Redirigir después de confirmar con SweetAlert2
             });
-            
+
             // Limpiar el formulario
             setSelectedUnidad("");
             setSelectedChofer("");
             setSelectedProducto("GASOIL_G2");
             setLitros("");
-            setMonto("");
+            setImporte("");
             setFechaCarga("");
         } else {
             Swal.fire("Error", "No se pudo registrar la orden", "error");
+        }
+    };
+
+    const handleTanqueLlenoChange = () => {
+        setTanqueLleno(!tanqueLleno);
+        if (!tanqueLleno) {
+            setLitros("");
+            setImporte("");
+        }
+    };
+
+    const handleInputChange = (field: "litros" | "importe", value: string) => {
+        if (field === "litros") {
+            setLitros(value);
+            if (value) {
+                setImporte("");
+                setTanqueLleno(false);
+            }
+        } else {
+            setImporte(value);
+            if (value) {
+                setLitros("");
+                setTanqueLleno(false);
+            }
         }
     };
 
@@ -174,7 +202,7 @@ export default function CrearOrden() {
         <div className="max-w-2xl mx-auto p-6 mt-20">
 
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
-            <h2 className="text-2xl font-bold">Crear Órden</h2>
+                <h2 className="text-2xl font-bold">Crear Órden</h2>
                 <form onSubmit={handleCrearOrden} className="p-4">
 
                     <label className="block font-semibold">Unidad</label>
@@ -213,22 +241,45 @@ export default function CrearOrden() {
                         <option value="NAFTA_ECO">Nafta Eco</option>
                     </select>
 
-                    <label className="block font-semibold">Litros <span className="text-red-600">(Opcional)</span></label>
+                    <label className="block font-semibold">Condición de Pago</label>
+                    <select
+                        className="w-full p-2 border rounded mb-2"
+                        value={condicionPago}
+                        onChange={(e) => setCondicionPago(e.target.value as "Cuenta Corriente" | "Pago Anticipado")}
+                    >
+                        <option value="Cuenta Corriente">Cuenta Corriente</option>
+                        <option value="Pago Anticipado">Pago Anticipado</option>
+                    </select>
+
+                    <div className="flex space-x-2">
+                        <label className="block font-semibold">Tanque Lleno</label>
+                        <input
+                            type="checkbox"
+                            checked={tanqueLleno}
+                            onChange={handleTanqueLlenoChange}
+                            className="w-6 h-6 mb-2"
+                            disabled={!!litros || !!importe} // 🔹 Se deshabilita si hay litros o importe
+                        />
+                    </div>
+
+                    <label className="block font-semibold">Litros</label>
                     <input
                         type="number"
                         className="w-full p-2 border rounded mb-2"
                         placeholder="Cantidad de litros"
                         value={litros}
-                        onChange={(e) => setLitros(e.target.value)}
+                        onChange={(e) => handleInputChange("litros", e.target.value)}
+                        disabled={tanqueLleno || !!importe} // 🔹 Se deshabilita si tanque lleno o importe está seleccionado
                     />
 
-                    <label className="block font-semibold">Monto <span className="text-red-600">(Opcional)</span></label>
+                    <label className="block font-semibold">Importe</label>
                     <input
                         type="number"
                         className="w-full p-2 border rounded mb-2"
-                        placeholder="Monto total"
-                        value={monto}
-                        onChange={(e) => setMonto(e.target.value)}
+                        placeholder="Importe total"
+                        value={importe}
+                        onChange={(e) => handleInputChange("importe", e.target.value)}
+                        disabled={tanqueLleno || !!litros} // 🔹 Se deshabilita si tanque lleno o litros está seleccionado
                     />
 
                     <label className="block font-semibold">Fecha de Carga <span className="text-red-600">(Opcional)</span></label>

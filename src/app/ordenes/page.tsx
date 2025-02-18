@@ -28,7 +28,9 @@ interface Orden {
     choferId: string | Chofer;
     producto: string;
     litros?: number;
-    monto?: number;
+    importe?: number;
+    tanqueLleno?: boolean;
+    condicionPago: "Cuenta Corriente" | "Pago Anticipado"; // ✅ Agregado
     estado: string;
     fechaEmision: string;
     fechaCarga: string;
@@ -255,10 +257,29 @@ export default function Ordenes() {
                                     <p className="text-gray-600"><strong>DNI: </strong>
                                         {typeof orden.choferId === "object" ? orden.choferId.documento : "Sin asignar"}
                                     </p>
-                                    {orden.litros !== undefined && <p className="text-gray-600"><strong>Litros:</strong> {orden.litros} L</p>}
-                                    {orden.monto !== undefined && <p className="text-gray-600"><strong>Monto:</strong> ${orden.monto}</p>}
-                                    {orden.fechaEmision && <p className="text-gray-600"><strong>Fecha de Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>}
-                                    {orden.fechaCarga && <p className="text-gray-600"><strong>Fecha de Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>}
+
+                                    {/* ✅ Solo mostrar "Tanque Lleno" si se seleccionó esa opción */}
+                                    {orden.tanqueLleno ? (
+                                        <p className="text-gray-600 font-normal"><strong>Orden por:</strong> Tanque Lleno</p>
+                                    ) : (
+                                        <>
+                                            {/* ✅ Solo mostrar litros si está definido y tanqueLleno es falso */}
+                                            {orden.litros !== undefined && !orden.tanqueLleno && (
+                                                <p className="text-gray-600"><strong>Litros:</strong> {orden.litros} L</p>
+                                            )}
+                                            {/* ✅ Solo mostrar importe si está definido y tanqueLleno es falso */}
+                                            {orden.importe !== undefined && !orden.tanqueLleno && (
+                                                <p className="text-gray-600"><strong>Importe:</strong> ${orden.importe}</p>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {orden.fechaEmision && (
+                                        <p className="text-gray-600"><strong>Fecha de Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>
+                                    )}
+                                    {orden.fechaCarga && (
+                                        <p className="text-gray-600"><strong>Fecha de Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>
+                                    )}
 
                                     <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600"
                                         : orden.estado === "AUTORIZADA" ? "text-green-600"

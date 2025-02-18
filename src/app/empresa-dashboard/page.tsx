@@ -37,7 +37,7 @@ interface Orden {
     choferId: string;
     producto: "GASOIL_G2" | "GASOIL_G3" | "NAFTA_SUPER" | "NAFTA_ECO";
     litros?: number;
-    monto?: number;
+    importe?: number;
     estado: "PENDIENTE" | "AUTORIZADA" | "CARGA_COMPLETADA";
     unidadMatricula?: string;
     unidadTipo?: string;

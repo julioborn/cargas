@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
-import Unidad from "@/models/Unidad";
-import Chofer from "@/models/Chofer";
 import { connectMongoDB } from "@/lib/mongodb";
 
 export async function GET(req: Request) {
@@ -28,10 +26,20 @@ export async function GET(req: Request) {
         console.log("🔍 Filtro aplicado:", query);
 
         // ✅ SE POPULAN unidadId Y choferId PARA QUE NO APAREZCAN COMO "DESCONOCIDA"
-        const ordenes = await Orden.find(query)
+        let ordenes = await Orden.find(query)
             .populate("empresaId")
             .populate("unidadId", "matricula") // Solo trae la matrícula
-            .populate("choferId", "nombre documento"); // Solo trae nombre y documento
+            .populate("choferId", "nombre documento") // Solo trae nombre y documento
+            .lean(); // ✅ Convierte los documentos de Mongoose a objetos JS
+
+        // ✅ Si tanque lleno es true, eliminar litros e importe de la respuesta
+        ordenes = ordenes.map((orden) => {
+            if (orden.tanqueLleno) {
+                delete orden.litros;
+                delete orden.importe;
+            }
+            return orden;
+        });
 
         return NextResponse.json(ordenes);
     } catch (error) {
@@ -50,33 +58,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "empresaId es requerido" }, { status: 400 });
         }
 
-        // ✅ GENERACIÓN DE ID ÚNICO ALFANUMÉRICO DE 6 CARACTERES
+        if (!body.condicionPago) {
+            return NextResponse.json({ error: "condicionPago es requerido" }, { status: 400 });
+        }
+
         const idUnico = nanoid(6).replace(/[^A-Z0-9]/g, "");
 
-        // ✅ ASIGNAR UNIDAD SI NO SE ENVÍA UNA
-        let unidadAsignada = null;
-        if (!body.unidadId) {
-            unidadAsignada = await Unidad.findOne({ empresaId: body.empresaId });
-        }
-
-        // ✅ ASIGNAR CHOFER SI NO SE ENVÍA UNO
-        let choferAsignado = null;
-        if (!body.choferId) {
-            choferAsignado = await Chofer.findOne({ empresaId: body.empresaId });
-        }
-
-        // ✅ CREAR LA ORDEN ASEGURANDO QUE TENGA UNIDAD Y CHOFER
         const nuevaOrden = new Orden({
             idUnico,
             empresaId: mongoose.isValidObjectId(body.empresaId)
                 ? new mongoose.Types.ObjectId(body.empresaId)
                 : body.empresaId,
-            unidadId: body.unidadId || unidadAsignada?._id,
-            choferId: body.choferId || choferAsignado?._id,
+            unidadId: body.unidadId || undefined,
+            choferId: body.choferId || undefined,
             producto: body.producto,
-            litros: body.litros,
-            monto: body.monto,
-            fechaCarga: body.fechaCarga,
+            tanqueLleno: body.tanqueLleno || false,
+            litros: body.tanqueLleno ? undefined : body.litros,
+            importe: body.tanqueLleno ? undefined : body.importe,
+            condicionPago: body.condicionPago, // ✅ Agregado
+            fechaCarga: body.fechaCarga || undefined,
             estado: "PENDIENTE",
         });
 
