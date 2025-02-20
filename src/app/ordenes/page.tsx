@@ -3,8 +3,6 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import QRCode from "qrcode";
 
 interface Unidad {
     _id: string;
@@ -291,7 +289,6 @@ export default function Ordenes() {
                             ))}
                         </ul>
                     </div>
-
                 )}
             </div>
         </div>

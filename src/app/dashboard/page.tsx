@@ -14,7 +14,9 @@ interface Orden {
     _id: string;
     empresaId: Empresa;
     producto: string;
-    litros: number;
+    tanqueLleno: boolean;
+    litros?: number;
+    monto?: number;
     estado: string;
     fechaEmision: string;
     fechaCarga?: string;
@@ -58,7 +60,9 @@ export default function Dashboard() {
         const fetchOrdenes = async () => {
             try {
                 const params = new URLSearchParams(
-                    Object.fromEntries(Object.entries(filtros).filter(([_, v]) => v !== ""))
+                    Object.fromEntries(
+                        Object.entries(filtros).filter(([_, v]) => v !== "")
+                    )
                 ).toString();
 
                 const res = await fetch(`/api/ordenes?${params}`);
@@ -90,7 +94,8 @@ export default function Dashboard() {
         }
     };
 
-    const formatFecha = (fecha: string) => (fecha ? new Date(fecha).toISOString().split("T")[0] : "");
+    const formatFecha = (fecha: string) =>
+        fecha ? new Date(fecha).toISOString().split("T")[0] : "";
 
     const handleFiltroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -100,12 +105,9 @@ export default function Dashboard() {
         }));
     };
 
-
     return (
         <div className="max-w-6xl mx-auto p-6 mt-20">
-
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
-
                 <h2 className="text-2xl font-bold">Panel de Administración</h2>
                 <h2 className="text-2xl font-bold mt-2">Órdenes</h2>
 
@@ -157,18 +159,43 @@ export default function Dashboard() {
                         {ordenes.map((orden) => (
                             <li key={orden._id} className="border border-gray-300 p-4 rounded mb-2">
                                 <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
-                                <p><strong>Producto:</strong> {orden.producto.replace(/_/g, " ")}</p>
-                                <p><strong>Litros:</strong> {orden.litros} L</p>
-                                <p><strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>
-                                {orden.fechaCarga && <p><strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>}
-
-                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600"
-                                    : orden.estado === "AUTORIZADA" ? "text-green-600"
-                                        : "text-red-600"
-                                    }`}>
+                                <p>
+                                    <strong>Producto:</strong> {orden.producto.replace(/_/g, " ")}
+                                </p>
+                                {/* Mostrar solo una de las 3 opciones */}
+                                {orden.tanqueLleno ? (
+                                    <p>
+                                        <strong>Tanque Lleno</strong>
+                                    </p>
+                                ) : orden.litros ? (
+                                    <p>
+                                        <strong>Litros:</strong> {orden.litros} L
+                                    </p>
+                                ) : orden.monto ? (
+                                    <p>
+                                        <strong>Monto:</strong> {orden.monto}
+                                    </p>
+                                ) : null}
+                                <p>
+                                    <strong>Fecha Emisión:</strong>{" "}
+                                    {new Date(orden.fechaEmision).toLocaleDateString()}
+                                </p>
+                                {orden.fechaCarga && (
+                                    <p>
+                                        <strong>Fecha Carga:</strong>{" "}
+                                        {new Date(orden.fechaCarga).toLocaleDateString()}
+                                    </p>
+                                )}
+                                <p
+                                    className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE"
+                                            ? "text-yellow-600"
+                                            : orden.estado === "AUTORIZADA"
+                                                ? "text-green-600"
+                                                : "text-red-600"
+                                        }`}
+                                >
                                     {orden.estado.replace(/_/g, " ")}
                                 </p>
-
                                 {/* 🛠️ Botones de Acción */}
                                 <div className="flex gap-2 mt-2">
                                     {orden.estado === "PENDIENTE" && (
@@ -192,7 +219,6 @@ export default function Dashboard() {
                         ))}
                     </ul>
                 </div>
-
             </div>
         </div>
     );

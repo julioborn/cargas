@@ -1,34 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
+import Unidad from "@/models/Unidad";
+import Chofer from "@/models/Chofer";
+import Empresa from "@/models/Empresa"; // Asegúrate de importar el modelo Empresa
 import { connectMongoDB } from "@/lib/mongodb";
 import { getToken } from "next-auth/jwt";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
     try {
         await connectMongoDB();
 
-        // Castea el objeto `req` a NextRequest para que getToken lo acepte
+        // Obtiene el token para saber quién está haciendo la petición
         const token = await getToken({
-            req: req as NextRequest,
+            req: req as any, // Castea el Request a NextRequest para que getToken lo acepte
             secret: process.env.NEXTAUTH_SECRET,
             secureCookie: process.env.NODE_ENV === "production",
         });
+
         const { searchParams } = new URL(req.url);
+        const empresaId = searchParams.get("empresaId");
+        const estado = searchParams.get("estado");
+        const fechaDesde = searchParams.get("fechaDesde");
+        const fechaHasta = searchParams.get("fechaHasta");
+
         let query: any = {};
 
-        // Si el usuario es chofer, limitar a sus órdenes autorizadas
+        // Si el usuario es chofer, filtramos solo sus órdenes autorizadas
         if (token?.role === "chofer") {
             query.choferId = token.id;
             query.estado = "AUTORIZADA";
         } else {
-            // Para otros roles se permiten filtros adicionales
-            const empresaId = searchParams.get("empresaId");
-            const estado = searchParams.get("estado");
-            const fechaDesde = searchParams.get("fechaDesde");
-            const fechaHasta = searchParams.get("fechaHasta");
-
             if (empresaId) query.empresaId = empresaId;
             if (estado) query.estado = estado;
             if (fechaDesde || fechaHasta) {
@@ -38,22 +41,13 @@ export async function GET(req: Request) {
             }
         }
 
-        console.log("🔍 Query aplicada:", query);
+        console.log("🔍 Filtro aplicado:", query);
 
-        let ordenes = await Orden.find(query)
+        const ordenes = await Orden.find(query)
             .populate("empresaId")
             .populate("unidadId", "matricula")
             .populate("choferId", "nombre documento")
             .lean();
-
-        // Si el tanque está lleno, eliminamos litros e importe de la respuesta
-        ordenes = ordenes.map((orden) => {
-            if (orden.tanqueLleno) {
-                delete orden.litros;
-                delete orden.importe;
-            }
-            return orden;
-        });
 
         return NextResponse.json(ordenes);
     } catch (error) {
@@ -66,31 +60,36 @@ export async function POST(req: Request) {
     try {
         await connectMongoDB();
         const body = await req.json();
-        console.log("📥 Datos recibidos en API:", body);
 
         if (!body.empresaId) {
             return NextResponse.json({ error: "empresaId es requerido" }, { status: 400 });
         }
 
-        if (!body.condicionPago) {
-            return NextResponse.json({ error: "condicionPago es requerido" }, { status: 400 });
+        const idUnico = nanoid(6).replace(/[^A-Z0-9]/g, "");
+
+        // Si no se envía unidad, se asigna la primera encontrada para esa empresa
+        let unidadAsignada = null;
+        if (!body.unidadId) {
+            unidadAsignada = await Unidad.findOne({ empresaId: body.empresaId });
         }
 
-        const idUnico = nanoid(6).replace(/[^A-Z0-9]/g, "");
+        // Si no se envía chofer, se asigna el primero encontrado para esa empresa
+        let choferAsignado = null;
+        if (!body.choferId) {
+            choferAsignado = await Chofer.findOne({ empresaId: body.empresaId });
+        }
 
         const nuevaOrden = new Orden({
             idUnico,
             empresaId: mongoose.isValidObjectId(body.empresaId)
                 ? new mongoose.Types.ObjectId(body.empresaId)
                 : body.empresaId,
-            unidadId: body.unidadId || undefined,
-            choferId: body.choferId || undefined,
+            unidadId: body.unidadId || unidadAsignada?._id,
+            choferId: body.choferId || choferAsignado?._id,
             producto: body.producto,
-            tanqueLleno: body.tanqueLleno || false,
-            litros: body.tanqueLleno ? undefined : body.litros,
-            importe: body.tanqueLleno ? undefined : body.importe,
-            condicionPago: body.condicionPago, // ✅ Agregado
-            fechaCarga: body.fechaCarga || undefined,
+            litros: body.litros,
+            monto: body.monto,
+            fechaCarga: body.fechaCarga,
             estado: "PENDIENTE",
         });
 
@@ -115,19 +114,18 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        // Verifica que el estado sea válido
         const estadosValidos = ["PENDIENTE", "AUTORIZADA", "CARGADA"];
         if (!estadosValidos.includes(nuevoEstado)) {
             return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
         }
 
-        // Actualiza la orden en la BD
         const ordenActualizada = await Orden.findByIdAndUpdate(
             id,
             { estado: nuevoEstado },
             { new: true }
-        ).populate("unidadId", "matricula") // Asegura que se traiga la matrícula
-            .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
+        )
+            .populate("unidadId", "matricula")
+            .populate("choferId", "nombre documento");
 
         if (!ordenActualizada) {
             return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
