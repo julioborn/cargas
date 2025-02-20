@@ -1,38 +1,52 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
 import { connectMongoDB } from "@/lib/mongodb";
+import { getToken } from "next-auth/jwt";
 
 export async function GET(req: Request) {
     try {
         await connectMongoDB();
-        const { searchParams } = new URL(req.url);
-        const empresaId = searchParams.get("empresaId");
-        const estado = searchParams.get("estado");
-        const fechaDesde = searchParams.get("fechaDesde");
-        const fechaHasta = searchParams.get("fechaHasta");
 
+        // Castea el objeto `req` a NextRequest para que getToken lo acepte
+        const token = await getToken({
+            req: req as NextRequest,
+            secret: process.env.NEXTAUTH_SECRET,
+            secureCookie: process.env.NODE_ENV === "production",
+        });
+        const { searchParams } = new URL(req.url);
         let query: any = {};
 
-        if (empresaId) query.empresaId = empresaId;
-        if (estado) query.estado = estado;
-        if (fechaDesde || fechaHasta) {
-            query.fechaEmision = {};
-            if (fechaDesde) query.fechaEmision.$gte = new Date(fechaDesde);
-            if (fechaHasta) query.fechaEmision.$lte = new Date(fechaHasta);
+        // Si el usuario es chofer, limitar a sus órdenes autorizadas
+        if (token?.role === "chofer") {
+            query.choferId = token.id;
+            query.estado = "AUTORIZADA";
+        } else {
+            // Para otros roles se permiten filtros adicionales
+            const empresaId = searchParams.get("empresaId");
+            const estado = searchParams.get("estado");
+            const fechaDesde = searchParams.get("fechaDesde");
+            const fechaHasta = searchParams.get("fechaHasta");
+
+            if (empresaId) query.empresaId = empresaId;
+            if (estado) query.estado = estado;
+            if (fechaDesde || fechaHasta) {
+                query.fechaEmision = {};
+                if (fechaDesde) query.fechaEmision.$gte = new Date(fechaDesde);
+                if (fechaHasta) query.fechaEmision.$lte = new Date(fechaHasta);
+            }
         }
 
-        console.log("🔍 Filtro aplicado:", query);
+        console.log("🔍 Query aplicada:", query);
 
-        // ✅ SE POPULAN unidadId Y choferId PARA QUE NO APAREZCAN COMO "DESCONOCIDA"
         let ordenes = await Orden.find(query)
             .populate("empresaId")
-            .populate("unidadId", "matricula") // Solo trae la matrícula
-            .populate("choferId", "nombre documento") // Solo trae nombre y documento
-            .lean(); // ✅ Convierte los documentos de Mongoose a objetos JS
+            .populate("unidadId", "matricula")
+            .populate("choferId", "nombre documento")
+            .lean();
 
-        // ✅ Si tanque lleno es true, eliminar litros e importe de la respuesta
+        // Si el tanque está lleno, eliminamos litros e importe de la respuesta
         ordenes = ordenes.map((orden) => {
             if (orden.tanqueLleno) {
                 delete orden.litros;
@@ -113,7 +127,7 @@ export async function PATCH(req: Request) {
             { estado: nuevoEstado },
             { new: true }
         ).populate("unidadId", "matricula") // Asegura que se traiga la matrícula
-         .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
+            .populate("choferId", "nombre documento"); // Asegura que se traiga el nombre y DNI
 
         if (!ordenActualizada) {
             return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });

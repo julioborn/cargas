@@ -6,8 +6,8 @@ declare module "next-auth" {
             id: string;
             name: string;
             email: string;
-            role: "admin" | "empresa";
-            empresaId?: string | null; // ✅ Agregar empresaId como opcional
+            role: "admin" | "empresa" | "chofer";
+            empresaId?: string | null; // Agregar empresaId como opcional
         };
     }
 
@@ -15,7 +15,7 @@ declare module "next-auth" {
         id: string;
         name: string;
         email: string;
-        role: "admin" | "empresa";
-        empresaId?: string | null; // ✅ Agregar empresaId como opcional
+        role: "admin" | "empresa" | "chofer";
+        empresaId?: string | null; // Agregar empresaId como opcional
     }
 }

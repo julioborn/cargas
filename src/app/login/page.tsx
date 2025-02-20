@@ -1,12 +1,13 @@
 "use client";
-
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+    const [role, setRole] = useState("usuario"); // "usuario" abarca admin y empresa
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [documento, setDocumento] = useState("");
     const [error, setError] = useState("");
     const router = useRouter();
 
@@ -14,11 +15,20 @@ export default function LoginPage() {
         e.preventDefault();
         setError("");
 
-        console.log("🔍 Intentando iniciar sesión con:", { email, password });
+        // Preparamos las credenciales a enviar según la opción seleccionada
+        const credentials: Record<string, string> = { role };
+
+        if (role === "chofer") {
+            credentials.documento = documento;
+        } else {
+            credentials.email = email;
+            credentials.password = password;
+        }
+
+        console.log("🔍 Intentando iniciar sesión con:", credentials);
 
         const result = await signIn("credentials", {
-            email,
-            password,
+            ...credentials,
             redirect: false,
         });
 
@@ -28,18 +38,17 @@ export default function LoginPage() {
             setError("Credenciales incorrectas");
         } else {
             await fetch("/api/auth/session");
-            router.refresh(); // 🔥 Refresca la página para asegurarse de que la sesión se actualiza correctamente
+            router.refresh();
 
             setTimeout(async () => {
                 const res = await fetch("/api/auth/session");
                 const session = await res.json();
-
                 console.log("🔍 Sesión después de login:", session);
 
-                if (session?.user?.role === "admin") {
-                    router.push("/dashboard");
-                } else if (session?.user?.role === "empresa") {
-                    router.push("/empresa-dashboard");
+                if (session?.user?.role === "chofer") {
+                    router.push("/chofer-ordenes"); // Ruta exclusiva para choferes
+                } else {
+                    router.push("/dashboard"); // Para usuarios (admin/empresa)
                 }
             }, 100);
         }
@@ -54,34 +63,65 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">
-                            Email
+                            Tipo de Usuario
                         </label>
-                        <input
-                            type="email"
+                        <select
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
+                        >
+                            <option value="usuario">Administrador</option>
+                            <option value="chofer">Chofer</option>
+                        </select>
                     </div>
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-1">
-                            Contraseña
-                        </label>
-                        <input
-                            type="password"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Contraseña"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
+
+                    {role === "chofer" ? (
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-1">
+                                DNI
+                            </label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Ingrese su DNI"
+                                value={documento}
+                                onChange={(e) => setDocumento(e.target.value)}
+                                required
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-1">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="tu@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-1">
+                                    Contraseña
+                                </label>
+                                <input
+                                    type="password"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Contraseña"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </>
+                    )}
+
                     {error && (
-                        <p className="text-red-500 text-sm text-center">
-                            {error}
-                        </p>
+                        <p className="text-red-500 text-sm text-center">{error}</p>
                     )}
                     <button
                         type="submit"
