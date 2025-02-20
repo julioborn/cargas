@@ -69,12 +69,30 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "empresaId es requerido" }, { status: 400 });
         }
 
+        if (!body.condicionPago) {
+            return NextResponse.json({ error: "condicionPago es requerido" }, { status: 400 });
+        }
+
+        // Validar que solo se envíe una opción entre tanqueLleno, litros y monto
+        const hasTanqueLleno = body.tanqueLleno === true;
+        const hasLitros = typeof body.litros === "number" && body.litros > 0;
+        const hasMonto = typeof body.monto === "number" && body.monto > 0;
+
+        if ((hasTanqueLleno && (hasLitros || hasMonto)) || (hasLitros && hasMonto)) {
+            return NextResponse.json(
+                { error: "Solo puedes elegir una opción: litros, importe o tanque lleno." },
+                { status: 400 }
+            );
+        }
+
         const idUnico = nanoid(6).replace(/[^A-Z0-9]/g, "");
 
+        // Si no se envía unidad, se asigna la primera encontrada para esa empresa
         let unidadAsignada = null;
         if (!body.unidadId) {
             unidadAsignada = await Unidad.findOne({ empresaId: body.empresaId });
         }
+        // Si no se envía chofer, se asigna el primero encontrado para esa empresa
         let choferAsignado = null;
         if (!body.choferId) {
             choferAsignado = await Chofer.findOne({ empresaId: body.empresaId });
@@ -88,9 +106,11 @@ export async function POST(req: Request) {
             unidadId: body.unidadId || unidadAsignada?._id,
             choferId: body.choferId || choferAsignado?._id,
             producto: body.producto,
-            litros: body.litros,
-            monto: body.monto,
+            litros: hasLitros ? body.litros : undefined,
+            monto: hasMonto ? body.monto : undefined,
+            tanqueLleno: hasTanqueLleno ? true : false,
             fechaCarga: body.fechaCarga,
+            condicionPago: body.condicionPago,
             estado: "PENDIENTE",
         });
 
