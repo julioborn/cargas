@@ -3,7 +3,10 @@ import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
 import Unidad from "@/models/Unidad";
 import Chofer from "@/models/Chofer";
-import Empresa from "@/models/Empresa"; // Asegúrate de importar el modelo Empresa
+import Empresa from "@/models/Empresa"; // Se importa el modelo Empresa
+// Forzamos el registro del modelo Empresa
+console.log("Empresa model registrado:", Empresa.modelName);
+
 import { connectMongoDB } from "@/lib/mongodb";
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
@@ -12,9 +15,9 @@ export async function GET(req: Request) {
     try {
         await connectMongoDB();
 
-        // Obtiene el token para saber quién está haciendo la petición
+        // Obtiene el token para identificar al usuario
         const token = await getToken({
-            req: req as any, // Castea el Request a NextRequest para que getToken lo acepte
+            req: req as any, // Cast a NextRequest si es necesario
             secret: process.env.NEXTAUTH_SECRET,
             secureCookie: process.env.NODE_ENV === "production",
         });
@@ -27,9 +30,10 @@ export async function GET(req: Request) {
 
         let query: any = {};
 
-        // Si el usuario es chofer, filtramos solo sus órdenes autorizadas
         if (token?.role === "chofer") {
             query.choferId = token.id;
+            query.estado = "AUTORIZADA";
+        } else if (token?.role === "playero") {
             query.estado = "AUTORIZADA";
         } else {
             if (empresaId) query.empresaId = empresaId;
@@ -67,13 +71,10 @@ export async function POST(req: Request) {
 
         const idUnico = nanoid(6).replace(/[^A-Z0-9]/g, "");
 
-        // Si no se envía unidad, se asigna la primera encontrada para esa empresa
         let unidadAsignada = null;
         if (!body.unidadId) {
             unidadAsignada = await Unidad.findOne({ empresaId: body.empresaId });
         }
-
-        // Si no se envía chofer, se asigna el primero encontrado para esa empresa
         let choferAsignado = null;
         if (!body.choferId) {
             choferAsignado = await Chofer.findOne({ empresaId: body.empresaId });
@@ -106,33 +107,59 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
     try {
         await connectMongoDB();
-        const { id, nuevoEstado } = await req.json();
-
-        console.log(`🔄 Cambiando estado de orden ${id} a ${nuevoEstado}`);
+        const { id, nuevoEstado, documento, litros } = await req.json();
 
         if (!mongoose.isValidObjectId(id)) {
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const estadosValidos = ["PENDIENTE", "AUTORIZADA", "CARGADA"];
-        if (!estadosValidos.includes(nuevoEstado)) {
-            return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
+        if (nuevoEstado === "CARGADA" && documento && litros) {
+            const orden = await Orden.findById(id);
+            if (!orden) {
+                return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+            }
+            if (orden.estado !== "AUTORIZADA") {
+                return NextResponse.json(
+                    { error: "Solo se puede actualizar una orden autorizada" },
+                    { status: 400 }
+                );
+            }
+            const Playero = (await import("@/models/Playero")).default;
+            const playero = await Playero.findOne({ documento: documento.trim() });
+            if (!playero) {
+                return NextResponse.json({ error: "Playero no encontrado" }, { status: 404 });
+            }
+            // Actualizamos la orden: asignamos litros y anulamos importe y tanqueLleno
+            orden.estado = "CARGADA";
+            orden.litros = litros;
+            orden.importe = undefined;
+            orden.tanqueLleno = false;
+            orden.playeroId = playero._id;
+            await orden.save();
+            const ordenActualizada = await Orden.findById(id)
+                .populate("unidadId", "matricula")
+                .populate("choferId", "nombre documento")
+                .populate("playeroId", "nombre documento")
+                .lean();
+            return NextResponse.json(ordenActualizada);
+        } else {
+            const estadosValidos = ["PENDIENTE", "AUTORIZADA", "CARGADA"];
+            if (!estadosValidos.includes(nuevoEstado)) {
+                return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
+            }
+            const ordenActualizada = await Orden.findByIdAndUpdate(
+                id,
+                { estado: nuevoEstado },
+                { new: true }
+            )
+                .populate("unidadId", "matricula")
+                .populate("choferId", "nombre documento")
+                .lean();
+            if (!ordenActualizada) {
+                return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+            }
+            return NextResponse.json(ordenActualizada);
         }
-
-        const ordenActualizada = await Orden.findByIdAndUpdate(
-            id,
-            { estado: nuevoEstado },
-            { new: true }
-        )
-            .populate("unidadId", "matricula")
-            .populate("choferId", "nombre documento");
-
-        if (!ordenActualizada) {
-            return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
-        }
-
-        console.log("✅ Orden actualizada:", ordenActualizada);
-        return NextResponse.json(ordenActualizada);
     } catch (error) {
         console.error("❌ Error actualizando orden:", error);
         return NextResponse.json({ error: "Error actualizando orden" }, { status: 500 });

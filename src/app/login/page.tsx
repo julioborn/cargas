@@ -1,10 +1,11 @@
 "use client";
+
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-    const [role, setRole] = useState("usuario"); // "usuario" abarca admin y empresa
+    const [role, setRole] = useState("usuario"); // "usuario" abarca admin
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [documento, setDocumento] = useState("");
@@ -18,7 +19,7 @@ export default function LoginPage() {
         // Preparamos las credenciales a enviar según la opción seleccionada
         const credentials: Record<string, string> = { role };
 
-        if (role === "chofer") {
+        if (role === "chofer" || role === "playero") {
             credentials.documento = documento;
         } else {
             credentials.email = email;
@@ -46,9 +47,11 @@ export default function LoginPage() {
                 console.log("🔍 Sesión después de login:", session);
 
                 if (session?.user?.role === "chofer") {
-                    router.push("/chofer-ordenes"); // Ruta exclusiva para choferes
+                    router.push("/chofer-ordenes");
+                } else if (session?.user?.role === "playero") {
+                    router.push("/playero-ordenes");
                 } else {
-                    router.push("/dashboard"); // Para usuarios (admin/empresa)
+                    router.push("/dashboard");
                 }
             }, 100);
         }
@@ -72,18 +75,19 @@ export default function LoginPage() {
                         >
                             <option value="usuario">Administrador</option>
                             <option value="chofer">Chofer</option>
+                            <option value="playero">Playero</option>
                         </select>
                     </div>
 
-                    {role === "chofer" ? (
+                    {(role === "chofer" || role === "playero") ? (
                         <div>
                             <label className="block text-gray-700 font-medium mb-1">
-                                DNI
+                                Documento
                             </label>
                             <input
                                 type="text"
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Ingrese su DNI"
+                                placeholder="Ingrese su documento"
                                 value={documento}
                                 onChange={(e) => setDocumento(e.target.value)}
                                 required

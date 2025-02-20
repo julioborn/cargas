@@ -1,40 +1,61 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectMongoDB } from "@/lib/mongodb";
 import Usuario from "@/models/Usuario";
 import Chofer from "@/models/Chofer";
+import Playero from "@/models/Playero"; // Asegúrate de que este modelo esté correctamente definido
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
             name: "credentials",
             credentials: {
                 role: { label: "Tipo de Usuario", type: "text" },
-                email: { label: "Email", type: "email", placeholder: "tu@email.com" },
+                email: {
+                    label: "Email",
+                    type: "email",
+                    placeholder: "tu@email.com",
+                },
                 password: { label: "Contraseña", type: "password" },
-                documento: { label: "DNI", type: "text" },
+                documento: { label: "Documento", type: "text" },
             },
             async authorize(credentials) {
                 await connectMongoDB();
                 console.log("🔍 Credenciales recibidas:", credentials);
 
-                // Si se selecciona "chofer", se valida mediante DNI
+                // Si el rol es "chofer", busca en el modelo Chofer por DNI
                 if (credentials?.role === "chofer") {
                     const dni = credentials.documento.trim();
                     console.log("🔍 Buscando chofer con DNI:", dni);
                     const chofer = await Chofer.findOne({ documento: dni });
-                    console.log("🔍 Resultado de la búsqueda:", chofer);
+                    console.log("🔍 Resultado de la búsqueda (chofer):", chofer);
                     if (!chofer) throw new Error("Chofer no encontrado");
                     console.log("✅ Chofer autenticado:", chofer.documento);
                     return {
                         id: chofer._id.toString(),
-                        email: null,
+                        email: "",
                         name: chofer.nombre,
                         role: "chofer",
                     };
-                } else {
-                    // Para "usuario" (admin/empresa) se valida mediante email y contraseña
+                }
+                // Si el rol es "playero", busca en el modelo Playero por documento
+                else if (credentials?.role === "playero") {
+                    const doc = credentials.documento.trim();
+                    console.log("🔍 Buscando playero con documento:", doc);
+                    const playero = await Playero.findOne({ documento: doc });
+                    console.log("🔍 Resultado de la búsqueda (playero):", playero);
+                    if (!playero) throw new Error("Playero no encontrado");
+                    console.log("✅ Playero autenticado:", playero.documento);
+                    return {
+                        id: playero._id.toString(),
+                        email: "",
+                        name: playero.nombre,
+                        role: "playero",
+                    };
+                }
+                // Lógica para usuarios (admin/empresa) mediante email y contraseña
+                else {
                     const user = await Usuario.findOne({ email: credentials?.email });
                     if (!user) throw new Error("Usuario no encontrado");
                     const isValidPassword = await bcrypt.compare(
@@ -53,8 +74,9 @@ const handler = NextAuth({
             },
         }),
     ],
-    session: {
-        strategy: "jwt",
+    session: { strategy: "jwt" },
+    jwt: {
+        secret: process.env.NEXTAUTH_SECRET,
     },
     callbacks: {
         async jwt({ token, user }) {
@@ -62,24 +84,24 @@ const handler = NextAuth({
                 token.id = user.id;
                 token.role = user.role;
             }
+            console.log("🔥 JWT generado en authOptions:", token);
             return token;
         },
         async session({ session, token }) {
             session.user.id = token.id as string;
-            session.user.role = token.role as "admin" | "empresa" | "chofer";
+            session.user.role = token.role as "admin" | "empresa" | "chofer" | "playero";
             return session;
         },
     },
-    pages: {
-        signIn: "/login",
-    },
+    pages: { signIn: "/login" },
     secret: process.env.NEXTAUTH_SECRET,
     useSecureCookies: process.env.NODE_ENV === "production",
     cookies: {
         sessionToken: {
-            name: process.env.NODE_ENV === "production"
-                ? "__Secure-next-auth.session-token"
-                : "next-auth.session-token",
+            name:
+                process.env.NODE_ENV === "production"
+                    ? "__Secure-next-auth.session-token"
+                    : "next-auth.session-token",
             options: {
                 httpOnly: true,
                 sameSite: "lax",
@@ -88,6 +110,8 @@ const handler = NextAuth({
             },
         },
     },
-});
+    debug: process.env.NODE_ENV === "development",
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

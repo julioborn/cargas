@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { connectMongoDB } from "@/lib/mongodb";
 import Usuario from "@/models/Usuario";
 import Chofer from "@/models/Chofer";
+import Playero from "@/models/Playero"; // Importa el modelo Playero
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -13,7 +14,7 @@ export const authOptions: NextAuthOptions = {
                 role: { label: "Tipo de Usuario", type: "text" },
                 email: { label: "Email", type: "email", placeholder: "tu@email.com" },
                 password: { label: "Contraseña", type: "password" },
-                documento: { label: "DNI", type: "text" },
+                documento: { label: "Documento", type: "text" },
             },
             async authorize(credentials) {
                 await connectMongoDB();
@@ -23,7 +24,7 @@ export const authOptions: NextAuthOptions = {
                     const dni = credentials.documento.trim();
                     console.log("🔍 Buscando chofer con DNI:", dni);
                     const chofer = await Chofer.findOne({ documento: dni });
-                    console.log("🔍 Resultado de la búsqueda:", chofer);
+                    console.log("🔍 Resultado de la búsqueda (chofer):", chofer);
                     if (!chofer) {
                         console.error("❌ Chofer no encontrado con DNI:", dni);
                         return null;
@@ -35,6 +36,22 @@ export const authOptions: NextAuthOptions = {
                         name: chofer.nombre,
                         role: "chofer",
                         empresaId: chofer.empresaId?.toString() ?? null,
+                    };
+                } if (credentials?.role === "playero") {
+                    const dni = credentials.documento.trim();
+                    console.log("🔍 Buscando playero con documento:", dni);
+                    const playero = await Playero.findOne({ documento: dni });
+                    console.log("🔍 Resultado de la búsqueda (playero):", playero);
+                    if (!playero) {
+                        console.error("❌ Playero no encontrado con documento:", dni);
+                        return null;
+                    }
+                    console.log("✅ Playero autenticado:", playero.documento);
+                    return {
+                        id: playero._id.toString(),
+                        email: "",
+                        name: playero.nombre,
+                        role: "playero",
                     };
                 } else {
                     // Lógica para usuarios (admin/empresa)
@@ -56,7 +73,7 @@ export const authOptions: NextAuthOptions = {
                         id: user._id.toString(),
                         email: user.email,
                         name: user.nombre,
-                        role: user.rol,
+                        role: user.rol, // admin o empresa
                         empresaId: user.empresaId ?? null,
                     };
                 }
@@ -84,7 +101,8 @@ export const authOptions: NextAuthOptions = {
                 id: token.id as string,
                 email: token.email as string,
                 name: token.name as string,
-                role: token.role as "chofer" | "admin" | "empresa",
+                // Se actualiza el tipo para incluir "playero"
+                role: token.role as "chofer" | "admin" | "empresa" | "playero",
                 empresaId: token.empresaId as string | null,
             };
             console.log("✅ Sesión generada:", session);
@@ -95,9 +113,10 @@ export const authOptions: NextAuthOptions = {
     pages: { signIn: "/login" },
     cookies: {
         sessionToken: {
-            name: process.env.NODE_ENV === "production"
-                ? "__Secure-next-auth.session-token"
-                : "next-auth.session-token",
+            name:
+                process.env.NODE_ENV === "production"
+                    ? "__Secure-next-auth.session-token"
+                    : "next-auth.session-token",
             options: {
                 httpOnly: true,
                 sameSite: "lax",
