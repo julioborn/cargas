@@ -6,7 +6,7 @@ import Usuario from "@/models/Usuario";
 import Chofer from "@/models/Chofer";
 import Playero from "@/models/Playero"; // Asegúrate de que este modelo esté correctamente definido
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
             name: "credentials",
@@ -24,7 +24,6 @@ export const authOptions: NextAuthOptions = {
                 await connectMongoDB();
                 console.log("🔍 Credenciales recibidas:", credentials);
 
-                // Si el rol es "chofer", busca en el modelo Chofer por DNI
                 if (credentials?.role === "chofer") {
                     const dni = credentials.documento.trim();
                     console.log("🔍 Buscando chofer con DNI:", dni);
@@ -38,9 +37,7 @@ export const authOptions: NextAuthOptions = {
                         name: chofer.nombre,
                         role: "chofer",
                     };
-                }
-                // Si el rol es "playero", busca en el modelo Playero por documento
-                else if (credentials?.role === "playero") {
+                } else if (credentials?.role === "playero") {
                     const doc = credentials.documento.trim();
                     console.log("🔍 Buscando playero con documento:", doc);
                     const playero = await Playero.findOne({ documento: doc });
@@ -53,9 +50,8 @@ export const authOptions: NextAuthOptions = {
                         name: playero.nombre,
                         role: "playero",
                     };
-                }
-                // Lógica para usuarios (admin/empresa) mediante email y contraseña
-                else {
+                } else {
+                    // Lógica para usuarios (admin/empresa) mediante email y contraseña
                     const user = await Usuario.findOne({ email: credentials?.email });
                     if (!user) throw new Error("Usuario no encontrado");
                     const isValidPassword = await bcrypt.compare(
