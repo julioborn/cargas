@@ -42,9 +42,7 @@ export default function HeaderWithSidebar() {
                     </div>
 
                     {/* 🏷️ Logo */}
-                    <Link href="/" className="absolute left-1/2 transform -translate-x-1/2">
-                        <Image src="/cargas-black-header.png" alt="Logo" width={200} height={40} priority />
-                    </Link>
+                    <Image src="/cargas-black-header.png" alt="Logo" width={200} height={40} priority />
                 </div>
             </header>
 

@@ -10,6 +10,15 @@ interface Empresa {
     nombre: string;
 }
 
+interface Unidad {
+    matricula: string;
+}
+
+interface Chofer {
+    nombre: string;
+    documento: string;
+}
+
 interface Orden {
     _id: string;
     empresaId: Empresa;
@@ -20,6 +29,8 @@ interface Orden {
     estado: string;
     fechaEmision: string;
     fechaCarga?: string;
+    unidadId?: Unidad;
+    choferId?: Chofer;
 }
 
 export default function Dashboard() {
@@ -85,9 +96,15 @@ export default function Dashboard() {
         });
 
         if (res.ok) {
-            Swal.fire("Actualizado", `La orden ha sido marcada como "${nuevoEstado}".`, "success");
+            Swal.fire(
+                "Actualizado",
+                `La orden ha sido marcada como "${nuevoEstado}".`,
+                "success"
+            );
             setOrdenes((prev) =>
-                prev.map((orden) => (orden._id === id ? { ...orden, estado: nuevoEstado } : orden))
+                prev.map((orden) =>
+                    orden._id === id ? { ...orden, estado: nuevoEstado } : orden
+                )
             );
         } else {
             Swal.fire("Error", "No se pudo actualizar la orden", "error");
@@ -97,7 +114,9 @@ export default function Dashboard() {
     const formatFecha = (fecha: string) =>
         fecha ? new Date(fecha).toISOString().split("T")[0] : "";
 
-    const handleFiltroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleFiltroChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
         setFiltros((prev) => ({
             ...prev,
@@ -115,7 +134,9 @@ export default function Dashboard() {
                 <div className="flex gap-4 mt-4">
                     <select
                         value={filtros.empresaId}
-                        onChange={(e) => setFiltros({ ...filtros, empresaId: e.target.value })}
+                        onChange={(e) =>
+                            setFiltros({ ...filtros, empresaId: e.target.value })
+                        }
                         className="p-2 border border-gray-400 rounded"
                     >
                         <option value="">Todas las Empresas</option>
@@ -128,7 +149,9 @@ export default function Dashboard() {
 
                     <select
                         value={filtros.estado}
-                        onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
+                        onChange={(e) =>
+                            setFiltros({ ...filtros, estado: e.target.value })
+                        }
                         className="p-2 border border-gray-400 rounded"
                     >
                         <option value="">Todos los Estados</option>
@@ -160,7 +183,8 @@ export default function Dashboard() {
                             <li key={orden._id} className="border border-gray-300 p-4 rounded mb-2">
                                 <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
                                 <p>
-                                    <strong>Producto:</strong> {orden.producto.replace(/_/g, " ")}
+                                    <strong>Producto:</strong>{" "}
+                                    {orden.producto.replace(/_/g, " ")}
                                 </p>
                                 {/* Mostrar solo una de las 3 opciones */}
                                 {orden.tanqueLleno ? (
@@ -176,6 +200,17 @@ export default function Dashboard() {
                                         <strong>Monto:</strong> {orden.monto}
                                     </p>
                                 ) : null}
+                                {orden.choferId && (
+                                    <p>
+                                        <strong>Chofer:</strong> {orden.choferId.nombre} (
+                                        {orden.choferId.documento})
+                                    </p>
+                                )}
+                                {orden.unidadId && (
+                                    <p>
+                                        <strong>Matrícula:</strong> {orden.unidadId.matricula}
+                                    </p>
+                                )}
                                 <p>
                                     <strong>Fecha Emisión:</strong>{" "}
                                     {new Date(orden.fechaEmision).toLocaleDateString()}
