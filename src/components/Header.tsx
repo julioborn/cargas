@@ -124,7 +124,7 @@ export default function HeaderWithSidebar() {
                             Panel Principal
                         </Link>
                         <Link
-                            href="/crear-playero"
+                            href="/playeros"
                             className="flex items-center gap-2"
                             onClick={() => setIsOpen(false)}
                         >

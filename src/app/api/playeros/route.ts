@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import Playero from "@/models/Playero";
 import { connectMongoDB } from "@/lib/mongodb";
 
+export async function GET(req: Request) {
+    try {
+        await connectMongoDB();
+        const playeros = await Playero.find({}).lean();
+        return NextResponse.json(playeros);
+    } catch (error) {
+        console.error("❌ Error obteniendo playeros:", error);
+        return NextResponse.json({ error: "Error obteniendo playeros" }, { status: 500 });
+    }
+}
+
 export async function POST(req: Request) {
     try {
         await connectMongoDB();
