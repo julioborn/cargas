@@ -95,7 +95,7 @@ export default function LoginPage() {
                                 required
                             />
                         </div>
-                    ) : 
+                    ) : (
                         <>
                             <div>
                                 <label className="block text-gray-700 font-medium mb-1">
