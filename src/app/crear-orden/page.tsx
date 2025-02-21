@@ -282,13 +282,13 @@ export default function CrearOrden() {
                         disabled={tanqueLleno || !!litros} // 🔹 Se deshabilita si tanque lleno o litros está seleccionado
                     />
 
-                    <label className="block font-semibold">Fecha de Carga <span className="text-red-600">(Opcional)</span></label>
+                    {/* <label className="block font-semibold">Fecha de Carga <span className="text-red-600">(Opcional)</span></label>
                     <input
                         type="date"
                         className="w-full p-2 border rounded mb-2"
                         value={fechaCarga}
                         onChange={(e) => setFechaCarga(e.target.value)}
-                    />
+                    /> */}
 
                     <button type="submit" className="w-fit bg-green-600 hover:bg-green-700 font-semibold text-white py-2 px-4 rounded mt-4">
                         + Crear Orden
