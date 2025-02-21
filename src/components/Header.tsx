@@ -110,6 +110,32 @@ export default function HeaderWithSidebar() {
                     </nav>
                 )}
 
+                {session?.user?.role === "admin" && (
+                    <nav className="space-y-4">
+                        <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 text-green-300 hover:text-green-100"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            {/* Ícono opcional */}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                                <path fillRule="evenodd" d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" clipRule="evenodd" />
+                            </svg>
+                            Panel Principal
+                        </Link>
+                        <Link
+                            href="/crear-playero"
+                            className="flex items-center gap-2"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                                <path d="M10 5a1 1 0 0 1 1 1v3h3a1 1 0 1 1 0 2h-3v3a1 1 0 1 1-2 0v-3H6a1 1 0 1 1 0-2h3V6a1 1 0 0 1 1-1z" />
+                            </svg>
+                            Playeros
+                        </Link>
+                    </nav>
+                )}
+
                 {/* 🔴 Botón de Cerrar Sesión */}
                 <button
                     onClick={() => {

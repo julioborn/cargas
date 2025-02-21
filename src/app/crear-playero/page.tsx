@@ -35,14 +35,16 @@ export default function CrearPlayero() {
     };
 
     return (
-        <div className="max-w-md mt-20 mx-auto p-6 bg-white rounded shadow">
-            <h2 className="text-2xl font-bold mb-4">Crear Playero</h2>
+        <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded shadow-md">
+            <h2 className="text-2xl font-bold mb-6 text-center">Crear Playero</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-gray-700">Nombre y Apellido</label>
+                    <label className="block text-gray-700 mb-1">
+                        Nombre y Apellido
+                    </label>
                     <input
                         type="text"
-                        className="w-full p-2 border border-gray-300 rounded"
+                        className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Ingrese nombre y apellido"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
@@ -50,20 +52,20 @@ export default function CrearPlayero() {
                     />
                 </div>
                 <div>
-                    <label className="block text-gray-700">Documento</label>
+                    <label className="block text-gray-700 mb-1">Documento</label>
                     <input
                         type="text"
-                        className="w-full p-2 border border-gray-300 rounded"
+                        className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Ingrese documento"
                         value={documento}
                         onChange={(e) => setDocumento(e.target.value)}
                         required
                     />
                 </div>
-                {error && <p className="text-red-500">{error}</p>}
+                {error && <p className="text-red-500 text-center">{error}</p>}
                 <button
                     type="submit"
-                    className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+                    className="w-full bg-green-600 text-white py-3 rounded hover:bg-green-700 transition duration-200"
                     disabled={loading}
                 >
                     {loading ? "Creando..." : "Crear Playero"}

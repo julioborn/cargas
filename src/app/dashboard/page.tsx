@@ -131,13 +131,13 @@ export default function Dashboard() {
                 <h2 className="text-2xl font-bold mt-2">Órdenes</h2>
 
                 {/* 🔍 Filtros */}
-                <div className="flex gap-4 mt-4">
+                <div className="flex flex-col sm:flex-row gap-4 mt-4">
                     <select
                         value={filtros.empresaId}
                         onChange={(e) =>
                             setFiltros({ ...filtros, empresaId: e.target.value })
                         }
-                        className="p-2 border border-gray-400 rounded"
+                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
                     >
                         <option value="">Todas las Empresas</option>
                         {empresas.map((empresa) => (
@@ -152,7 +152,7 @@ export default function Dashboard() {
                         onChange={(e) =>
                             setFiltros({ ...filtros, estado: e.target.value })
                         }
-                        className="p-2 border border-gray-400 rounded"
+                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
                     >
                         <option value="">Todos los Estados</option>
                         <option value="PENDIENTE">Pendiente de Autorización</option>
@@ -160,20 +160,21 @@ export default function Dashboard() {
                         <option value="CARGADA">Cargada</option>
                     </select>
 
-                    <input
+                    {/* <input
                         type="date"
                         name="fechaDesde"
                         value={filtros.fechaDesde}
                         onChange={handleFiltroChange}
-                        className="p-2 border border-gray-400 rounded"
-                    />
-                    <input
+                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
+                    /> */}
+
+                    {/* <input
                         type="date"
                         name="fechaHasta"
                         value={filtros.fechaHasta}
                         onChange={handleFiltroChange}
-                        className="p-2 border border-gray-400 rounded"
-                    />
+                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
+                    /> */}
                 </div>
 
                 {/* 📜 Lista de Órdenes */}
@@ -223,10 +224,10 @@ export default function Dashboard() {
                                 )}
                                 <p
                                     className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE"
-                                            ? "text-yellow-600"
-                                            : orden.estado === "AUTORIZADA"
-                                                ? "text-green-600"
-                                                : "text-red-600"
+                                        ? "text-yellow-600"
+                                        : orden.estado === "AUTORIZADA"
+                                            ? "text-green-600"
+                                            : "text-red-600"
                                         }`}
                                 >
                                     {orden.estado.replace(/_/g, " ")}
