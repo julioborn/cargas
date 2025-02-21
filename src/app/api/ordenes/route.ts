@@ -3,8 +3,7 @@ import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
 import Unidad from "@/models/Unidad";
 import Chofer from "@/models/Chofer";
-import Empresa from "@/models/Empresa"; // Se importa el modelo Empresa
-// Forzamos el registro del modelo Empresa
+import Empresa from "@/models/Empresa"; 
 console.log("Empresa model registrado:", Empresa.modelName);
 
 import { connectMongoDB } from "@/lib/mongodb";

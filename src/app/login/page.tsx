@@ -85,7 +85,9 @@ export default function LoginPage() {
                                 Documento
                             </label>
                             <input
-                                type="text"
+                                type="tel"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Ingrese su documento"
                                 value={documento}
@@ -93,7 +95,7 @@ export default function LoginPage() {
                                 required
                             />
                         </div>
-                    ) : (
+                    ) : 
                         <>
                             <div>
                                 <label className="block text-gray-700 font-medium mb-1">
