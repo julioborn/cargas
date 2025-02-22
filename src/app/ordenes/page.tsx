@@ -149,9 +149,10 @@ export default function Ordenes() {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                {/* Filtros */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
                     {/* 🔍 Buscador Principal */}
-                    <div className="relative flex items-center border border-gray-400 rounded col-span-2">
+                    <div className="relative flex items-center border border-gray-400 rounded col-span-full">
                         <input
                             type="text"
                             placeholder="Buscar por matrícula, chofer o DNI"
@@ -230,7 +231,6 @@ export default function Ordenes() {
                     >
                         Limpiar Filtros
                     </button>
-
                 </div>
 
                 {ordenes.length === 0 ? (
