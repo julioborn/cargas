@@ -213,7 +213,7 @@ export default function EmpresaDashboard() {
                     )}
 
                     {/* Botones - centrados en mobile */}
-                    <div className="flex flex-col md:flex-row gap-2 mt-4 pt-2 border-t border-black w-fit mx-auto md:mx-0">
+                    <div className="flex flex-col md:flex-row gap-2 mt-4 pt-4 border-t border-black w-3/4 mx-auto md:mx-0">
                         <button
                             onClick={() => router.push("/unidades")}
                             className="flex justify-center items-center gap-1 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"

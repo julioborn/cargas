@@ -137,15 +137,17 @@ export default function HeaderWithSidebar() {
                 )}
 
                 {/* 🔴 Botón de Cerrar Sesión */}
-                <button
-                    onClick={() => {
-                        setIsOpen(false);
-                        signOut({ callbackUrl: "/login" }); // 🔥 Redirige explícitamente a /login
-                    }}
-                    className="mt-auto bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded flex items-center gap-2 w-full"
-                >
-                    <FiLogOut /> Cerrar sesión
-                </button>
+                {session && (
+                    <button
+                        onClick={() => {
+                            setIsOpen(false);
+                            signOut({ callbackUrl: "/login" });
+                        }}
+                        className="mt-auto bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded flex items-center gap-2 w-full"
+                    >
+                        <FiLogOut /> Cerrar sesión
+                    </button>
+                )}
             </motion.div>
         </>
     );

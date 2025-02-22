@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import Orden from "@/models/Orden";
 import Unidad from "@/models/Unidad";
 import Chofer from "@/models/Chofer";
-import Empresa from "@/models/Empresa"; 
+import Empresa from "@/models/Empresa";
 console.log("Empresa model registrado:", Empresa.modelName);
 
 import { connectMongoDB } from "@/lib/mongodb";
@@ -148,12 +148,13 @@ export async function PATCH(req: Request) {
             if (!playero) {
                 return NextResponse.json({ error: "Playero no encontrado" }, { status: 404 });
             }
-            // Actualizamos la orden: asignamos litros y anulamos importe y tanqueLleno
+            // Actualizamos la orden: asignamos litros, anulamos importe y tanqueLleno, asignamos fecha de carga
             orden.estado = "CARGADA";
             orden.litros = litros;
             orden.importe = undefined;
             orden.tanqueLleno = false;
             orden.playeroId = playero._id;
+            orden.fechaCarga = new Date();  // <-- Se asigna la fecha actual aquí
             await orden.save();
             const ordenActualizada = await Orden.findById(id)
                 .populate("unidadId", "matricula")
