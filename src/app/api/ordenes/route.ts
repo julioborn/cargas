@@ -50,6 +50,7 @@ export async function GET(req: Request) {
             .populate("empresaId")
             .populate("unidadId", "matricula")
             .populate("choferId", "nombre documento")
+            .populate("playeroId", "nombre documento")  // Se muestra el DNI del playero
             .lean();
 
         return NextResponse.json(ordenes);
@@ -153,13 +154,13 @@ export async function PATCH(req: Request) {
             orden.litros = litros;
             orden.importe = undefined;
             orden.tanqueLleno = false;
-            orden.playeroId = playero._id;
-            orden.fechaCarga = new Date();  // <-- Se asigna la fecha actual aquí
+            orden.playeroId = playero._id;  // Con este populate se mostrará el DNI del playero
+            orden.fechaCarga = new Date();
             await orden.save();
             const ordenActualizada = await Orden.findById(id)
                 .populate("unidadId", "matricula")
                 .populate("choferId", "nombre documento")
-                .populate("playeroId", "nombre documento")
+                .populate("playeroId", "nombre documento")  // Asegura que se traiga el DNI
                 .lean();
             return NextResponse.json(ordenActualizada);
         } else {

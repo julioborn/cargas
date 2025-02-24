@@ -4,35 +4,41 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface Unidad {
+interface Empresa {
     _id: string;
-    empresaId: string;
+    nombre: string;
+}
+
+interface Unidad {
     matricula: string;
-    tipo: string;
-    choferAnexado?: string | null;
 }
 
 interface Chofer {
+    nombre: string;
+    documento: string;
+}
+
+interface Playero {
     _id: string;
-    empresaId: string;
     nombre: string;
     documento: string;
 }
 
 interface Orden {
+    codigoOrden: string;
     _id: string;
-    empresaId: string;
-    unidadId: string | Unidad;
-    choferId: string | Chofer;
+    empresaId: Empresa;
     producto: string;
+    tanqueLleno: boolean;
     litros?: number;
-    importe?: number;
-    tanqueLleno?: boolean;
-    condicionPago: "Cuenta Corriente" | "Pago Anticipado"; // ✅ Agregado
+    monto?: number;
     estado: string;
     fechaEmision: string;
-    fechaCarga: string;
-    codigoOrden: string;
+    fechaCarga?: string;
+    unidadId?: Unidad;
+    choferId?: Chofer;
+    playeroId?: string | Playero;
+    condicionPago: "Cuenta Corriente" | "Pago Anticipado";
 }
 
 export default function Ordenes() {
@@ -133,6 +139,10 @@ export default function Ordenes() {
             (filtroFechaEmision ? orden.fechaEmision?.startsWith(filtroFechaEmision) : true)
         );
     });
+
+    const ordenesOrdenadas = ordenesFiltradas.slice().sort(
+        (a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime()
+    );
 
     return (
         <div className="max-w-2xl mx-auto p-6 mt-20">
@@ -238,51 +248,64 @@ export default function Ordenes() {
                 ) : (
                     <div className="relative flex flex-col col-span-2">
                         <ul className="max-h-96 overflow-y-auto">
-                            {ordenesFiltradas.map((orden) => (
+                            {ordenesOrdenadas.map((orden) => (
                                 <li key={orden._id} className="border border-gray-400 p-4 rounded mt-2 bg-white flex-shrink-0">
                                     <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
                                         {orden.codigoOrden}
                                     </p>
+                                    <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
                                     <p className="text-gray-600 font-bold">
                                         {orden.producto.replace(/_/g, " ")}
                                     </p>
-                                    <p className="text-gray-600"><strong>Unidad: </strong>
-                                        {typeof orden.unidadId === "object" ? orden.unidadId.matricula : "Desconocida"}
-                                    </p>
-                                    <p className="text-gray-600"><strong>Chofer: </strong>
-                                        {typeof orden.choferId === "object" ? orden.choferId.nombre : "Sin asignar"}
-                                    </p>
-                                    <p className="text-gray-600"><strong>DNI: </strong>
-                                        {typeof orden.choferId === "object" ? orden.choferId.documento : "Sin asignar"}
-                                    </p>
 
-                                    {/* ✅ Solo mostrar "Tanque Lleno" si se seleccionó esa opción */}
                                     {orden.tanqueLleno ? (
-                                        <p className="text-gray-600 font-normal"><strong>Orden por:</strong> Tanque Lleno</p>
-                                    ) : (
-                                        <>
-                                            {/* ✅ Solo mostrar litros si está definido y tanqueLleno es falso */}
-                                            {orden.litros !== undefined && !orden.tanqueLleno && (
-                                                <p className="text-gray-600"><strong>Litros:</strong> {orden.litros} L</p>
-                                            )}
-                                            {/* ✅ Solo mostrar importe si está definido y tanqueLleno es falso */}
-                                            {orden.importe !== undefined && !orden.tanqueLleno && (
-                                                <p className="text-gray-600"><strong>Importe:</strong> ${orden.importe}</p>
-                                            )}
-                                        </>
+                                        <p className="text-gray-600 font-normal">
+                                            <strong>Tanque Lleno</strong>
+                                        </p>
+                                    ) : orden.litros ? (
+                                        <p className="text-gray-600">
+                                            <strong>Litros:</strong> {orden.litros} L
+                                        </p>
+                                    ) : orden.monto ? (
+                                        <p className="text-gray-600">
+                                            <strong>Monto:</strong> {orden.monto}
+                                        </p>
+                                    ) : null}
+                                    <p className="text-gray-600">
+                                        <strong>Pago: </strong> {orden.condicionPago}
+                                    </p>
+                                    {orden.choferId && (
+                                        <p className="text-gray-600">
+                                            <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
+                                        </p>
                                     )}
-
-                                    {orden.fechaEmision && (
-                                        <p className="text-gray-600"><strong>Fecha de Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}</p>
+                                    {orden.unidadId && (
+                                        <p className="text-gray-600">
+                                            <strong>Matrícula:</strong> {orden.unidadId.matricula}
+                                        </p>
                                     )}
+                                    {orden.playeroId && typeof orden.playeroId !== "string" && (
+                                        <p className="text-gray-600">
+                                            <strong>Playero:</strong> {orden.playeroId.nombre} ({orden.playeroId.documento})
+                                        </p>
+                                    )}
+                                    <p className="text-gray-600">
+                                        <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}
+                                    </p>
                                     {orden.fechaCarga && (
-                                        <p className="text-gray-600"><strong>Fecha de Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}</p>
+                                        <p className="text-gray-600">
+                                            <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
+                                        </p>
                                     )}
 
-                                    <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600"
-                                        : orden.estado === "AUTORIZADA" ? "text-green-600"
-                                            : "text-red-600"
-                                        }`}>
+                                    <p
+                                        className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE"
+                                            ? "text-yellow-600"
+                                            : orden.estado === "AUTORIZADA"
+                                                ? "text-green-600"
+                                                : "text-red-600"
+                                            }`}
+                                    >
                                         {orden.estado}
                                     </p>
                                 </li>
@@ -290,6 +313,7 @@ export default function Ordenes() {
                         </ul>
                     </div>
                 )}
+
             </div>
         </div>
     );

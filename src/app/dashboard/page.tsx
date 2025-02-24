@@ -19,7 +19,14 @@ interface Chofer {
     documento: string;
 }
 
+interface Playero {
+    _id: string;
+    nombre: string;
+    documento: string;
+}
+
 interface Orden {
+    codigoOrden: string;
     _id: string;
     empresaId: Empresa;
     producto: string;
@@ -31,6 +38,8 @@ interface Orden {
     fechaCarga?: string;
     unidadId?: Unidad;
     choferId?: Chofer;
+    playeroId?: string | Playero;
+    condicionPago: "Cuenta Corriente" | "Pago Anticipado";
 }
 
 export default function Dashboard() {
@@ -124,6 +133,10 @@ export default function Dashboard() {
         }));
     };
 
+    const ordenesOrdenadas = ordenes.slice().sort(
+        (a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime()
+    );
+
     return (
         <div className="max-w-6xl mx-auto p-6 mt-20">
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
@@ -167,7 +180,6 @@ export default function Dashboard() {
                         onChange={handleFiltroChange}
                         className="p-2 border border-gray-400 rounded w-full sm:w-auto"
                     /> */}
-
                     {/* <input
                         type="date"
                         name="fechaHasta"
@@ -180,56 +192,59 @@ export default function Dashboard() {
                 {/* 📜 Lista de Órdenes */}
                 <div className="mt-4 relative flex flex-col border border-gray-400 rounded col-span-2">
                     <ul className="max-h-96 overflow-y-auto">
-                        {ordenes.map((orden) => (
+                        {ordenesOrdenadas.map((orden) => (
                             <li key={orden._id} className="border border-gray-300 p-4 rounded mb-2">
+                                <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
+                                    {orden.codigoOrden}
+                                </p>
                                 <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
-                                <p>
-                                    <strong>Producto:</strong>{" "}
+                                <p className="text-gray-600 font-bold">
                                     {orden.producto.replace(/_/g, " ")}
                                 </p>
-                                {/* Mostrar solo una de las 3 opciones */}
+
                                 {orden.tanqueLleno ? (
-                                    <p>
+                                    <p className="text-gray-600 font-normal">
                                         <strong>Tanque Lleno</strong>
                                     </p>
                                 ) : orden.litros ? (
-                                    <p>
+                                    <p className="text-gray-600">
                                         <strong>Litros:</strong> {orden.litros} L
                                     </p>
                                 ) : orden.monto ? (
-                                    <p>
+                                    <p className="text-gray-600">
                                         <strong>Monto:</strong> {orden.monto}
                                     </p>
                                 ) : null}
+                                <p className="text-gray-600">
+                                        <strong>Pago: </strong> {orden.condicionPago}
+                                    </p>
                                 {orden.choferId && (
-                                    <p>
-                                        <strong>Chofer:</strong> {orden.choferId.nombre} (
-                                        {orden.choferId.documento})
+                                    <p className="text-gray-600">
+                                        <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
                                     </p>
                                 )}
                                 {orden.unidadId && (
-                                    <p>
+                                    <p className="text-gray-600">
                                         <strong>Matrícula:</strong> {orden.unidadId.matricula}
                                     </p>
                                 )}
-                                <p>
-                                    <strong>Fecha Emisión:</strong>{" "}
-                                    {new Date(orden.fechaEmision).toLocaleDateString()}
-                                </p>
-                                {orden.fechaCarga && (
-                                    <p>
-                                        <strong>Fecha Carga:</strong>{" "}
-                                        {new Date(orden.fechaCarga).toLocaleDateString()}
+                                {orden.playeroId && typeof orden.playeroId !== "string" && (
+                                    <p className="text-gray-600">
+                                        <strong>Playero:</strong> {orden.playeroId.nombre} ({orden.playeroId.documento})
                                     </p>
                                 )}
-                                <p
-                                    className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE"
-                                        ? "text-yellow-600"
-                                        : orden.estado === "AUTORIZADA"
-                                            ? "text-green-600"
-                                            : "text-red-600"
-                                        }`}
-                                >
+                                <p className="text-gray-600">
+                                    <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}
+                                </p>
+                                {orden.fechaCarga && (
+                                    <p className="text-gray-600">
+                                        <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
+                                    </p>
+                                )}
+                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600" :
+                                    orden.estado === "AUTORIZADA" ? "text-green-600" :
+                                        "text-red-600"
+                                    }`}>
                                     {orden.estado.replace(/_/g, " ")}
                                 </p>
                                 {/* 🛠️ Botones de Acción */}

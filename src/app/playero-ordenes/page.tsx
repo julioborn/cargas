@@ -107,13 +107,29 @@ export default function PlayeroOrdenes() {
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <p className="font-bold text-lg">
-                                            {orden.empresaId.nombre} - Orden:{" "}
+                                            Orden:{" "}
                                             <span className="text-green-600">{orden.codigoOrden}</span>
+                                        </p>
+                                        <p className="font-bold text-lg">
+                                            {orden.empresaId.nombre}
                                         </p>
                                         <p>
                                             <strong>Producto:</strong>{" "}
                                             {orden.producto.replace(/_/g, " ")}
                                         </p>
+                                        {orden.tanqueLleno ? (
+                                            <p>
+                                                <strong>Tanque Lleno</strong>
+                                            </p>
+                                        ) : orden.litros ? (
+                                            <p>
+                                                <strong>Litros:</strong> {orden.litros} L
+                                            </p>
+                                        ) : orden.monto ? (
+                                            <p>
+                                                <strong>Monto:</strong> {orden.monto}
+                                            </p>
+                                        ) : null}
                                         <p>
                                             <strong>Fecha Emisión:</strong>{" "}
                                             {new Date(orden.fechaEmision).toLocaleDateString()}
@@ -124,12 +140,6 @@ export default function PlayeroOrdenes() {
                                                 {new Date(orden.fechaCarga).toLocaleDateString()}
                                             </p>
                                         )}
-                                        <p>
-                                            <strong>Estado:</strong>{" "}
-                                            <span className="font-bold text-green-600">
-                                                {orden.estado.replace(/_/g, " ")}
-                                            </span>
-                                        </p>
                                         {orden.unidadId && (
                                             <p>
                                                 <strong>Matrícula:</strong> {orden.unidadId.matricula}
@@ -141,6 +151,12 @@ export default function PlayeroOrdenes() {
                                                 {orden.choferId.documento})
                                             </p>
                                         )}
+                                        <p>
+                                            <strong>Estado:</strong>{" "}
+                                            <span className="font-bold text-green-600">
+                                                {orden.estado.replace(/_/g, " ")}
+                                            </span>
+                                        </p>
                                     </div>
                                     <button
                                         onClick={() => finalizarCarga(orden._id)}
