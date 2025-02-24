@@ -111,7 +111,7 @@ export async function POST(req: Request) {
             tanqueLleno: hasTanqueLleno ? true : false,
             fechaCarga: body.fechaCarga,
             condicionPago: body.condicionPago,
-            estado: "PENDIENTE",
+            estado: "PENDIENTE_AUTORIZACION",
         });
 
         await nuevaOrden.save();
@@ -164,7 +164,7 @@ export async function PATCH(req: Request) {
                 .lean();
             return NextResponse.json(ordenActualizada);
         } else {
-            const estadosValidos = ["PENDIENTE", "AUTORIZADA", "CARGADA"];
+            const estadosValidos = ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "CARGADA"];
             if (!estadosValidos.includes(nuevoEstado)) {
                 return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
             }

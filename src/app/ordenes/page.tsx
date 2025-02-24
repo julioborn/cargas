@@ -224,7 +224,7 @@ export default function Ordenes() {
                         className="p-2 border border-gray-400 rounded"
                     >
                         <option value="">Todos los Estados</option>
-                        <option value="PENDIENTE">Pendiente de Autorización</option>
+                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
                         <option value="AUTORIZADA">Pendiente de Carga</option>
                         <option value="CARGADA">Cargada</option>
                     </select>
@@ -299,7 +299,7 @@ export default function Ordenes() {
                                     )}
 
                                     <p
-                                        className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE"
+                                        className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION"
                                             ? "text-yellow-600"
                                             : orden.estado === "AUTORIZADA"
                                                 ? "text-green-600"

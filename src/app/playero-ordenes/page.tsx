@@ -42,6 +42,7 @@ interface Orden {
 
 export default function PlayeroOrdenes() {
     const [ordenes, setOrdenes] = useState<Orden[]>([]);
+    const [searchOrderId, setSearchOrderId] = useState("");
 
     useEffect(() => {
         const fetchOrdenes = async () => {
@@ -94,21 +95,33 @@ export default function PlayeroOrdenes() {
         }
     };
 
+    const filteredOrdenes = ordenes.filter((orden) =>
+        orden.codigoOrden.toLowerCase().includes(searchOrderId.toLowerCase())
+    );
+
     return (
         <div className="max-w-4xl mx-auto p-6 mt-16">
             <h1 className="text-3xl font-bold mb-6 text-center">Órdenes Autorizadas</h1>
+            <div className="mb-4">
+                <input
+                    type="text"
+                    placeholder="Buscar por ID de orden"
+                    value={searchOrderId}
+                    onChange={(e) => setSearchOrderId(e.target.value)}
+                    className="p-2 border border-gray-400 rounded w-full"
+                />
+            </div>
             {ordenes.length === 0 ? (
                 <p className="text-center text-gray-600">No hay órdenes autorizadas pendientes de carga.</p>
             ) : (
                 <div className="bg-white rounded shadow">
                     <ul className="space-y-4">
-                        {ordenes.map((orden) => (
+                        {filteredOrdenes.map((orden) => (
                             <li key={orden._id} className="p-4 border rounded shadow">
-                                <div className="flex justify-between items-center">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                                     <div>
-                                        <p className="font-bold text-lg">
-                                            Orden:{" "}
-                                            <span className="text-green-600">{orden.codigoOrden}</span>
+                                        <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
+                                            {orden.codigoOrden}
                                         </p>
                                         <p className="font-bold text-lg">
                                             {orden.empresaId.nombre}
@@ -160,7 +173,7 @@ export default function PlayeroOrdenes() {
                                     </div>
                                     <button
                                         onClick={() => finalizarCarga(orden._id)}
-                                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                        className="w-fit bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-4 md:mt-0"
                                     >
                                         Finalizar Carga
                                     </button>

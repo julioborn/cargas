@@ -168,7 +168,7 @@ export default function Dashboard() {
                         className="p-2 border border-gray-400 rounded w-full sm:w-auto"
                     >
                         <option value="">Todos los Estados</option>
-                        <option value="PENDIENTE">Pendiente de Autorización</option>
+                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
                         <option value="AUTORIZADA">Pendiente de Carga</option>
                         <option value="CARGADA">Cargada</option>
                     </select>
@@ -241,7 +241,7 @@ export default function Dashboard() {
                                         <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
                                     </p>
                                 )}
-                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE" ? "text-yellow-600" :
+                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION" ? "text-yellow-600" :
                                     orden.estado === "AUTORIZADA" ? "text-green-600" :
                                         "text-red-600"
                                     }`}>
@@ -249,7 +249,7 @@ export default function Dashboard() {
                                 </p>
                                 {/* 🛠️ Botones de Acción */}
                                 <div className="flex gap-2 mt-2">
-                                    {orden.estado === "PENDIENTE" && (
+                                    {orden.estado === "PENDIENTE_AUTORIZACION" && (
                                         <button
                                             onClick={() => actualizarEstado(orden._id, "AUTORIZADA")}
                                             className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"

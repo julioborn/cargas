@@ -24,8 +24,8 @@ const OrdenSchema = new mongoose.Schema({
 
     estado: {
         type: String,
-        enum: ["PENDIENTE", "AUTORIZADA", "CARGADA"],
-        default: "PENDIENTE"
+        enum: ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "CARGADA"],
+        default: "PENDIENTE_AUTORIZACION"
     },
 
     codigoOrden: { type: String, unique: true },

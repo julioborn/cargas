@@ -134,7 +134,7 @@ export default function CrearOrden() {
             tanqueLleno,
             condicionPago,
             fechaCarga: fechaCarga || undefined,
-            estado: "PENDIENTE",
+            estado: "PENDIENTE_AUTORIZACION",
         };        
 
         console.log("📤 Enviando orden a la API:", nuevaOrden); // 🔥 Verificar en consola
@@ -276,7 +276,7 @@ export default function CrearOrden() {
                     <input
                         type="number"
                         className="w-full p-2 border rounded mb-2"
-                        placeholder="Importe total"
+                        placeholder="Importe"
                         value={importe}
                         onChange={(e) => handleInputChange("importe", e.target.value)}
                         disabled={tanqueLleno || !!litros} // 🔹 Se deshabilita si tanque lleno o litros está seleccionado
