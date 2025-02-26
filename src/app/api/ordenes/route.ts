@@ -5,10 +5,12 @@ import Unidad from "@/models/Unidad";
 import Chofer from "@/models/Chofer";
 import Empresa from "@/models/Empresa";
 console.log("Empresa model registrado:", Empresa.modelName);
-
+import Ubicacion from "@/models/Ubicacion";
+import "@/models/Ubicacion"; // Para registrar el modelo Ubicacion
 import { connectMongoDB } from "@/lib/mongodb";
 import { getToken } from "next-auth/jwt";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import Swal from "sweetalert2";
 
 export async function GET(req: Request) {
     try {
@@ -50,7 +52,7 @@ export async function GET(req: Request) {
             .populate("empresaId")
             .populate("unidadId", "matricula")
             .populate("choferId", "nombre documento")
-            .populate("playeroId", "nombre documento")  // Se muestra el DNI del playero
+            .populate("playeroId", "nombre documento")
             .lean();
 
         return NextResponse.json(ordenes);
@@ -127,13 +129,14 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
     try {
         await connectMongoDB();
-        const { id, nuevoEstado, documento, litros } = await req.json();
+        const { id, nuevoEstado, litros, ubicacion } = await req.json();
 
         if (!mongoose.isValidObjectId(id)) {
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        if (nuevoEstado === "CARGADA" && documento && litros) {
+        // Para finalizar carga, requerimos litros y ubicación
+        if (nuevoEstado === "CARGADA" && litros && ubicacion) {
             const orden = await Orden.findById(id);
             if (!orden) {
                 return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
@@ -144,26 +147,89 @@ export async function PATCH(req: Request) {
                     { status: 400 }
                 );
             }
-            const Playero = (await import("@/models/Playero")).default;
-            const playero = await Playero.findOne({ documento: documento.trim() });
-            if (!playero) {
-                return NextResponse.json({ error: "Playero no encontrado" }, { status: 404 });
+
+            // Obtenemos el token para saber quién es el playero
+            const token = await getToken({
+                req: req as NextRequest,
+                secret: process.env.NEXTAUTH_SECRET,
+                secureCookie: process.env.NODE_ENV === "production",
+            });
+            if (!token) {
+                return NextResponse.json({ error: "No se pudo identificar el playero" }, { status: 401 });
             }
-            // Actualizamos la orden: asignamos litros, anulamos importe y tanqueLleno, asignamos fecha de carga
-            orden.estado = "CARGADA";
-            orden.litros = litros;
-            orden.importe = undefined;
-            orden.tanqueLleno = false;
-            orden.playeroId = playero._id;  // Con este populate se mostrará el DNI del playero
-            orden.fechaCarga = new Date();
-            await orden.save();
-            const ordenActualizada = await Orden.findById(id)
-                .populate("unidadId", "matricula")
-                .populate("choferId", "nombre documento")
-                .populate("playeroId", "nombre documento")  // Asegura que se traiga el DNI
-                .lean();
-            return NextResponse.json(ordenActualizada);
+            // Suponemos que token.id es el id del playero
+            const playeroId = token.id;
+
+            // Buscamos la ubicación en la colección Ubicacion
+            const { default: Ubicacion } = await import("@/models/Ubicacion");
+            const ubicacionDoc = await Ubicacion.findOne({ _id: ubicacion });
+            if (!ubicacionDoc) {
+                return NextResponse.json({ error: "Ubicación no encontrada" }, { status: 404 });
+            }
+
+            // Si la orden fue creada con litros y se cargaron menos de lo solicitado,
+            // se genera una nueva orden con la diferencia.
+            if (orden.litros !== undefined && orden.litros > litros) {
+                const diferencia = orden.litros - litros;
+
+                // Actualizamos la orden original con los litros cargados y asignamos fechaCarga y ubicación
+                orden.estado = "CARGADA";
+                orden.litros = litros;
+                orden.importe = undefined;
+                orden.tanqueLleno = false;
+                orden.playeroId = playeroId;
+                orden.fechaCarga = new Date();
+                orden.ubicacionId = ubicacionDoc._id;
+                await orden.save();
+
+                // Creamos una nueva orden para la diferencia
+                const nuevaOrden = new Orden({
+                    empresaId: orden.empresaId,
+                    unidadId: orden.unidadId,
+                    choferId: orden.choferId,
+                    producto: orden.producto,
+                    litros: diferencia,
+                    monto: undefined,
+                    tanqueLleno: false,
+                    condicionPago: orden.condicionPago,
+                    fechaEmision: new Date(),
+                    estado: "PENDIENTE_AUTORIZACION",
+                    codigoOrden: nanoid(6).replace(/[^A-Z0-9]/g, ""),
+                });
+                await nuevaOrden.save();
+
+                const ordenActualizada = await Orden.findById(id)
+                    .populate("unidadId", "matricula")
+                    .populate("choferId", "nombre documento")
+                    .populate("playeroId", "nombre documento")
+                    .populate("ubicacionId", "nombre")
+                    .lean();
+                const nuevaOrdenActual = await Orden.findById(nuevaOrden._id)
+                    .populate("unidadId", "matricula")
+                    .populate("choferId", "nombre documento")
+                    .populate("ubicacionId", "nombre")
+                    .lean();
+                return NextResponse.json({ ordenActualizada, nuevaOrden: nuevaOrdenActual });
+            } else {
+                // Actualización normal: si no hay diferencia o la orden no fue por litros
+                orden.estado = "CARGADA";
+                orden.litros = litros;
+                orden.importe = undefined;
+                orden.tanqueLleno = false;
+                orden.playeroId = playeroId;
+                orden.fechaCarga = new Date();
+                orden.ubicacionId = ubicacionDoc._id;
+                await orden.save();
+                const ordenActualizada = await Orden.findById(id)
+                    .populate("unidadId", "matricula")
+                    .populate("choferId", "nombre documento")
+                    .populate("playeroId", "nombre documento")
+                    .populate("ubicacionId", "nombre")
+                    .lean();
+                return NextResponse.json(ordenActualizada);
+            }
         } else {
+            // Para otros cambios de estado sin finalizar carga
             const estadosValidos = ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "CARGADA"];
             if (!estadosValidos.includes(nuevoEstado)) {
                 return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
@@ -186,3 +252,4 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Error actualizando orden" }, { status: 500 });
     }
 }
+

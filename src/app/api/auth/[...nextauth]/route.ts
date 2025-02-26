@@ -79,13 +79,14 @@ const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.ubicacionId = user.ubicacionId; // Agregado
             }
-            console.log("🔥 JWT generado en authOptions:", token);
             return token;
         },
         async session({ session, token }) {
             session.user.id = token.id as string;
             session.user.role = token.role as "admin" | "empresa" | "chofer" | "playero";
+            session.user.ubicacionId = token.ubicacionId as string | undefined; // Agregado
             return session;
         },
     },

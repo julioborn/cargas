@@ -8,6 +8,7 @@ interface Playero {
     _id: string;
     nombre: string;
     documento: string;
+    ubicacionId?: string | { _id: string; nombre: string };
 }
 
 export default function Playeros() {
@@ -33,27 +34,40 @@ export default function Playeros() {
     }, []);
 
     const handleAgregarPlayero = async () => {
-        const { value } = await Swal.fire({
-            title: "Agregar Playero",
-            html: `
-        <input id="swal-nombre" class="swal2-input" placeholder="Nombre del Playero">
-        <input id="swal-documento" class="swal2-input" placeholder="Documento">
-      `,
-            showCancelButton: true,
-            confirmButtonText: "Agregar",
-            preConfirm: () => {
-                const nombre = (document.getElementById("swal-nombre") as HTMLInputElement).value.trim();
-                const documento = (document.getElementById("swal-documento") as HTMLInputElement).value.trim();
-                if (!nombre || !documento) {
-                    Swal.showValidationMessage("Todos los campos son obligatorios");
-                    return false;
-                }
-                return { nombre: nombre.toUpperCase(), documento };
-            },
-        });
+        try {
+            // Obtener las ubicaciones disponibles
+            const resUbicaciones = await fetch("/api/ubicaciones");
+            if (!resUbicaciones.ok) throw new Error("Error al obtener ubicaciones");
+            const ubicaciones = await resUbicaciones.json();
+            const ubicacionOptions = ubicaciones
+                .map((u: { _id: string; nombre: string }) => `<option value="${u._id}">${u.nombre}</option>`)
+                .join("");
 
-        if (value) {
-            try {
+            const { value } = await Swal.fire({
+                title: "Agregar Playero",
+                html: `
+                    <input id="swal-nombre" class="swal2-input" placeholder="Nombre del Playero">
+                    <input id="swal-documento" class="swal2-input" placeholder="Documento">
+                    <select id="swal-ubicacion" class="swal2-input">
+                        <option value="">Selecciona una ubicación (opcional)</option>
+                        ${ubicacionOptions}
+                    </select>
+            `,
+                showCancelButton: true,
+                confirmButtonText: "Agregar",
+                preConfirm: () => {
+                    const nombre = (document.getElementById("swal-nombre") as HTMLInputElement).value.trim();
+                    const documento = (document.getElementById("swal-documento") as HTMLInputElement).value.trim();
+                    const ubicacionId = (document.getElementById("swal-ubicacion") as HTMLSelectElement).value;
+                    if (!nombre || !documento) {
+                        Swal.showValidationMessage("Todos los campos son obligatorios");
+                        return false;
+                    }
+                    return { nombre: nombre.toUpperCase(), documento, ubicacionId: ubicacionId || undefined };
+                },
+            });
+
+            if (value) {
                 const res = await fetch(`/api/playeros`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -63,46 +77,78 @@ export default function Playeros() {
                 const nuevoPlayero = await res.json();
                 Swal.fire("¡Agregado!", "Playero registrado correctamente.", "success");
                 setPlayeros([...playeros, nuevoPlayero]);
-            } catch (error) {
-                console.error("❌ Error registrando playero:", error);
-                Swal.fire("Error", "No se pudo registrar el playero", "error");
             }
+        } catch (error) {
+            console.error("❌ Error registrando playero:", error);
+            Swal.fire("Error", "No se pudo registrar el playero", "error");
         }
     };
 
     const handleEditarPlayero = async (playero: Playero) => {
-        const { value } = await Swal.fire({
-            title: "Editar Playero",
-            html: `
-        <input id="swal-nombre" class="swal2-input" value="${playero.nombre}" placeholder="Nombre del Playero">
-        <input id="swal-documento" class="swal2-input" value="${playero.documento}" placeholder="Documento">
-      `,
-            showCancelButton: true,
-            confirmButtonText: "Guardar cambios",
-            preConfirm: () => {
-                return {
-                    nombre: (document.getElementById("swal-nombre") as HTMLInputElement)
-                        .value.trim().toUpperCase(),
-                    documento: (document.getElementById("swal-documento") as HTMLInputElement)
-                        .value.trim(),
-                };
-            },
-        });
+        try {
+            // Obtenemos las ubicaciones disponibles para construir el select
+            const resUbicaciones = await fetch("/api/ubicaciones");
+            let locationOptions = "";
+            if (resUbicaciones.ok) {
+                const ubicaciones = await resUbicaciones.json();
+                locationOptions = ubicaciones
+                    .map((u: { _id: string; nombre: string }) => {
+                        // Si el playero ya tiene asignada una ubicación (y viene como objeto), la marcamos como seleccionada
+                        const isSelected =
+                            typeof playero.ubicacionId === "object" &&
+                            playero.ubicacionId &&
+                            playero.ubicacionId._id === u._id;
+                        return `<option value="${u._id}" ${isSelected ? "selected" : ""}>${u.nombre}</option>`;
+                    })
+                    .join("");
+            }
 
-        if (value) {
-            try {
+            const { value } = await Swal.fire({
+                title: "Editar Playero",
+                html: `
+              <input id="swal-nombre" class="swal2-input" value="${playero.nombre}" placeholder="Nombre del Playero">
+              <input id="swal-documento" class="swal2-input" value="${playero.documento}" placeholder="Documento">
+              <select id="swal-ubicacion" class="swal2-input">
+                <option value="">Selecciona una ubicación (opcional)</option>
+                ${locationOptions}
+              </select>
+            `,
+                showCancelButton: true,
+                confirmButtonText: "Guardar cambios",
+                preConfirm: () => {
+                    const nombre = (document.getElementById("swal-nombre") as HTMLInputElement)
+                        .value.trim()
+                        .toUpperCase();
+                    const documento = (document.getElementById("swal-documento") as HTMLInputElement)
+                        .value.trim();
+                    const ubicacionId = (document.getElementById("swal-ubicacion") as HTMLSelectElement).value;
+                    if (!nombre || !documento) {
+                        Swal.showValidationMessage("Nombre y documento son obligatorios");
+                        return false;
+                    }
+                    return { nombre, documento, ubicacionId: ubicacionId || undefined };
+                },
+            });
+
+            if (value) {
                 const res = await fetch(`/api/playeros/${playero._id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(value),
                 });
-                if (!res.ok) throw new Error("Error al actualizar el playero");
+                if (!res.ok) {
+                    const errResponse = await res.json();
+                    throw new Error(errResponse.error || "Error al actualizar el playero");
+                }
+                const updatedPlayero = await res.json();
                 Swal.fire("¡Actualizado!", "Playero editado correctamente.", "success");
-                setPlayeros(playeros.map((p) => (p._id === playero._id ? { ...p, ...value } : p)));
-            } catch (error) {
-                console.error("❌ Error actualizando playero:", error);
-                Swal.fire("Error", "No se pudo actualizar el playero", "error");
+                setPlayeros((prev) =>
+                    prev.map((p) => (p._id === playero._id ? updatedPlayero : p))
+                );
             }
+        } catch (error) {
+            console.error("❌ Error actualizando playero:", error);
+            Swal.fire("Error", "No se pudo actualizar el playero", "error");
         }
     };
 
@@ -120,9 +166,12 @@ export default function Playeros() {
                 const res = await fetch(`/api/playeros/${playeroId}`, {
                     method: "DELETE",
                 });
-                if (!res.ok) throw new Error("Error al eliminar el playero");
+                if (!res.ok) {
+                    const errResponse = await res.json();
+                    throw new Error(errResponse.error || "Error al eliminar el playero");
+                }
                 Swal.fire("Eliminado", "El playero ha sido eliminado.", "success");
-                setPlayeros(playeros.filter((p) => p._id !== playeroId));
+                setPlayeros((prev) => prev.filter((p) => p._id !== playeroId));
             } catch (error) {
                 console.error("❌ Error eliminando playero:", error);
                 Swal.fire("Error", "No se pudo eliminar el playero", "error");
@@ -185,6 +234,14 @@ export default function Playeros() {
                                         {playero.nombre.toUpperCase()}
                                     </span>
                                     <span className="text-gray-600">DNI: {playero.documento}</span>
+                                    {playero.ubicacionId && (
+                                        <span className="text-gray-600">
+                                            Ubicación:{" "}
+                                            {typeof playero.ubicacionId === "object"
+                                                ? playero.ubicacionId.nombre
+                                                : playero.ubicacionId}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex gap-2 items-center">
                                     <button
@@ -230,6 +287,7 @@ export default function Playeros() {
                         ))}
                     </ul>
                 </div>
+
             </div>
             <button
                 onClick={() => router.push("/empresa-dashboard")}

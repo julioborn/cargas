@@ -1,6 +1,6 @@
 "use client";
 
-import { div } from "framer-motion/client";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
@@ -22,6 +22,7 @@ interface Playero {
     _id: string;
     nombre: string;
     documento: string;
+    ubicacionId?: string | { _id: string; nombre: string };
 }
 
 interface Orden {
@@ -37,12 +38,15 @@ interface Orden {
     unidadId?: Unidad;
     choferId?: Chofer;
     playeroId?: Playero;
+    ubicacionId?: string | { _id: string; nombre: string };
     codigoOrden: string;
 }
 
 export default function PlayeroOrdenes() {
+    const { data: session, status } = useSession();
     const [ordenes, setOrdenes] = useState<Orden[]>([]);
     const [searchOrderId, setSearchOrderId] = useState("");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchOrdenes = async () => {
@@ -55,45 +59,89 @@ export default function PlayeroOrdenes() {
                 setOrdenes(data);
             } catch (error) {
                 console.error("Error al cargar órdenes:", error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchOrdenes();
     }, []);
 
-    const finalizarCarga = async (ordenId: string) => {
-        const { value: formValues } = await Swal.fire({
-            title: "Finalizar Carga",
-            html:
-                '<input id="swal-input1" class="swal2-input" placeholder="Documento">' +
-                '<input id="swal-input2" class="swal2-input" placeholder="Litros Cargados" type="number" step="0.01">',
-            focusConfirm: false,
-            preConfirm: () => {
-                const documento = (document.getElementById("swal-input1") as HTMLInputElement).value;
-                const litrosStr = (document.getElementById("swal-input2") as HTMLInputElement).value;
-                const litros = parseFloat(litrosStr);
-                if (!documento || isNaN(litros)) {
-                    Swal.showValidationMessage("Debes ingresar el documento y los litros cargados");
-                }
-                return { documento, litros };
-            },
-        });
+    const finalizarCarga = async (orden: Orden) => {
+        try {
+            // Consultamos las ubicaciones disponibles desde la API
+            const resUbicaciones = await fetch("/api/ubicaciones");
+            if (!resUbicaciones.ok) throw new Error("Error al obtener ubicaciones");
+            const ubicacionesData = await resUbicaciones.json();
 
-        if (formValues) {
-            const { documento, litros } = formValues;
-            const res = await fetch("/api/ordenes", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: ordenId, nuevoEstado: "CARGADA", documento, litros }),
-            });
-            if (res.ok) {
-                Swal.fire("Actualizado", "La orden ha sido CARGADA.", "success");
-                // Actualizamos la lista quitando la orden finalizada
-                setOrdenes(prev => prev.filter(o => o._id !== ordenId));
-            } else {
-                Swal.fire("Error", "No se pudo actualizar la orden", "error");
+            // Determinamos la ubicación por defecto usando la asignada al playero
+            let defaultUbicacion = "";
+            if (
+                orden.playeroId &&
+                typeof orden.playeroId === "object" &&
+                orden.playeroId.ubicacionId &&
+                typeof orden.playeroId.ubicacionId === "object"
+            ) {
+                defaultUbicacion = orden.playeroId.ubicacionId._id;
             }
+            console.log("defaultUbicacion:", defaultUbicacion);
+
+            // Construimos las opciones del <select>
+            const ubicacionOptions = ubicacionesData
+                .map((u: { _id: string; nombre: string }) => {
+                    const selected =
+                        u._id.toString() === defaultUbicacion.toString() ? "selected" : "";
+                    return `<option value="${u._id}" ${selected}>${u.nombre}</option>`;
+                })
+                .join("");
+
+            const { value: formValues } = await Swal.fire({
+                title: "Finalizar Carga",
+                html:
+                    `<select id="swal-ubicacion" class="swal2-input w-72">
+                        <option value="">Selecciona una ubicación </option>
+                        ${ubicacionOptions}
+                    </select>` +
+                    '<input id="swal-input2" class="swal2-input w-72" placeholder="Litros Cargados" type="number" step="0.01">',
+                focusConfirm: false,
+                preConfirm: () => {
+                    const ubicacion = (document.getElementById("swal-ubicacion") as HTMLSelectElement).value;
+                    const litrosStr = (document.getElementById("swal-input2") as HTMLInputElement).value;
+                    const litros = parseFloat(litrosStr);
+                    if (!ubicacion || isNaN(litros)) {
+                        Swal.showValidationMessage("Debes seleccionar la ubicación y los litros cargados");
+                        return false;
+                    }
+                    return { ubicacion, litros };
+                },
+            });
+
+            if (formValues) {
+                const { ubicacion, litros } = formValues;
+                const res = await fetch("/api/ordenes", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: orden._id, nuevoEstado: "CARGADA", ubicacion, litros }),
+                });
+                if (res.ok) {
+                    Swal.fire("Actualizado", "La orden ha sido CARGADA.", "success");
+                    setOrdenes((prev) => prev.filter((o) => o._id !== orden._id));
+                } else {
+                    Swal.fire("Error", "No se pudo actualizar la orden", "error");
+                }
+            }
+        } catch (error) {
+            console.error("Error en finalizarCarga:", error);
+            Swal.fire("Error", "Ocurrió un error al procesar la solicitud", "error");
         }
     };
+
+    if (status === "loading" || loading) {
+        return (
+            <div className="flex items-center justify-center h-screen text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
+            </div>
+        );
+    }
 
     const filteredOrdenes = ordenes.filter((orden) =>
         orden.codigoOrden.toLowerCase().includes(searchOrderId.toLowerCase())
@@ -165,14 +213,13 @@ export default function PlayeroOrdenes() {
                                             </p>
                                         )}
                                         <p>
-                                            <strong>Estado:</strong>{" "}
                                             <span className="font-bold text-green-600">
                                                 {orden.estado.replace(/_/g, " ")}
                                             </span>
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => finalizarCarga(orden._id)}
+                                        onClick={() => finalizarCarga(orden)}
                                         className="w-fit bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-4 md:mt-0"
                                     >
                                         Finalizar Carga

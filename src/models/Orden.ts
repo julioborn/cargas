@@ -9,14 +9,14 @@ const OrdenSchema = new mongoose.Schema({
     choferId: { type: mongoose.Schema.Types.ObjectId, ref: "Chofer" },
     producto: { type: String, required: true },
 
-    tanqueLleno: { type: Boolean, default: false }, // Opción "Tanque Lleno"
-    litros: { type: Number, default: null, required: false }, // Permite null
-    importe: { type: Number, default: null, required: false }, // Permite null
+    tanqueLleno: { type: Boolean, default: false },
+    litros: { type: Number, default: null, required: false },
+    importe: { type: Number, default: null, required: false },
 
     condicionPago: {
         type: String,
         enum: ["Cuenta Corriente", "Pago Anticipado"],
-        required: true // Obligatoria
+        required: true
     },
 
     fechaEmision: { type: Date, default: Date.now },
@@ -29,7 +29,8 @@ const OrdenSchema = new mongoose.Schema({
     },
 
     codigoOrden: { type: String, unique: true },
-    playeroId: { type: mongoose.Schema.Types.ObjectId, ref: "Playero" } // NUEVO: referencia al playero
+    playeroId: { type: mongoose.Schema.Types.ObjectId, ref: "Playero" },
+    ubicacionId: { type: mongoose.Schema.Types.ObjectId, ref: "Ubicacion" } // NUEVO campo
 });
 
 // Middleware para validar combinaciones inválidas
