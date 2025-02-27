@@ -39,6 +39,10 @@ interface Orden {
     choferId?: Chofer;
     playeroId?: string | Playero;
     condicionPago: "Cuenta Corriente" | "Pago Anticipado";
+    viaticos?: {
+        monto?: number;
+        moneda: "ARS" | "USD" | "Gs";
+    };
 }
 
 export default function Ordenes() {
@@ -295,6 +299,11 @@ export default function Ordenes() {
                                     {orden.fechaCarga && (
                                         <p className="text-gray-600">
                                             <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                    {orden.viaticos && orden.viaticos.monto != null && (
+                                        <p className="text-gray-600">
+                                            <strong>Viáticos:</strong> {orden.viaticos.monto} {orden.viaticos.moneda}
                                         </p>
                                     )}
 

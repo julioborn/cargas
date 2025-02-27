@@ -10,7 +10,6 @@ import "@/models/Ubicacion"; // Para registrar el modelo Ubicacion
 import { connectMongoDB } from "@/lib/mongodb";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
-import Swal from "sweetalert2";
 
 export async function GET(req: Request) {
     try {
@@ -18,7 +17,7 @@ export async function GET(req: Request) {
 
         // Obtiene el token para identificar al usuario
         const token = await getToken({
-            req: req as any, // Cast a NextRequest si es necesario
+            req: req as any,
             secret: process.env.NEXTAUTH_SECRET,
             secureCookie: process.env.NODE_ENV === "production",
         });
@@ -53,6 +52,7 @@ export async function GET(req: Request) {
             .populate("unidadId", "matricula")
             .populate("choferId", "nombre documento")
             .populate("playeroId", "nombre documento")
+            .populate("ubicacionId", "nombre")
             .lean();
 
         return NextResponse.json(ordenes);
@@ -70,7 +70,6 @@ export async function POST(req: Request) {
         if (!body.empresaId) {
             return NextResponse.json({ error: "empresaId es requerido" }, { status: 400 });
         }
-
         if (!body.condicionPago) {
             return NextResponse.json({ error: "condicionPago es requerido" }, { status: 400 });
         }
@@ -113,6 +112,8 @@ export async function POST(req: Request) {
             tanqueLleno: hasTanqueLleno ? true : false,
             fechaCarga: body.fechaCarga,
             condicionPago: body.condicionPago,
+            // Nuevo campo: viaticos (opcional)
+            viaticos: body.viaticos,
             estado: "PENDIENTE_AUTORIZACION",
         });
 
@@ -252,4 +253,3 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Error actualizando orden" }, { status: 500 });
     }
 }
-

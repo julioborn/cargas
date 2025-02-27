@@ -40,6 +40,10 @@ interface Orden {
     choferId?: Chofer;
     playeroId?: string | Playero;
     condicionPago: "Cuenta Corriente" | "Pago Anticipado";
+    viaticos?: {
+        monto?: number;
+        moneda: "ARS" | "USD" | "Gs";
+    };
 }
 
 export default function Dashboard() {
@@ -216,8 +220,8 @@ export default function Dashboard() {
                                     </p>
                                 ) : null}
                                 <p className="text-gray-600">
-                                        <strong>Pago: </strong> {orden.condicionPago}
-                                    </p>
+                                    <strong>Pago: </strong> {orden.condicionPago}
+                                </p>
                                 {orden.choferId && (
                                     <p className="text-gray-600">
                                         <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
@@ -239,6 +243,11 @@ export default function Dashboard() {
                                 {orden.fechaCarga && (
                                     <p className="text-gray-600">
                                         <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
+                                    </p>
+                                )}
+                                {orden.viaticos && orden.viaticos.monto != null && (
+                                    <p className="text-gray-600">
+                                        <strong>Viáticos:</strong> {orden.viaticos.monto} {orden.viaticos.moneda}
                                     </p>
                                 )}
                                 <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION" ? "text-yellow-600" :

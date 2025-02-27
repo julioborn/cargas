@@ -13,6 +13,12 @@ const OrdenSchema = new mongoose.Schema({
     litros: { type: Number, default: null, required: false },
     importe: { type: Number, default: null, required: false },
 
+    // Nuevo campo viáticos: monto y moneda
+    viaticos: {
+        monto: { type: Number, default: null },
+        moneda: { type: String, enum: ["ARS", "USD", "Gs"], default: "ARS" }
+    },
+
     condicionPago: {
         type: String,
         enum: ["Cuenta Corriente", "Pago Anticipado"],
@@ -30,7 +36,7 @@ const OrdenSchema = new mongoose.Schema({
 
     codigoOrden: { type: String, unique: true },
     playeroId: { type: mongoose.Schema.Types.ObjectId, ref: "Playero" },
-    ubicacionId: { type: mongoose.Schema.Types.ObjectId, ref: "Ubicacion" } // NUEVO campo
+    ubicacionId: { type: mongoose.Schema.Types.ObjectId, ref: "Ubicacion" }
 });
 
 // Middleware para validar combinaciones inválidas

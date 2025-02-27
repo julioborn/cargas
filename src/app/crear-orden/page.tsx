@@ -31,6 +31,11 @@ interface Orden {
     estado: string;
     fechaEmision: string;
     fechaCarga: string;
+    // Nuevo: viáticos como objeto
+    viaticos?: {
+        monto?: number;
+        moneda: "ARS" | "USD" | "Gs";
+    };
 }
 
 export default function CrearOrden() {
@@ -48,7 +53,10 @@ export default function CrearOrden() {
     const [importe, setImporte] = useState<string>("");
     const [tanqueLleno, setTanqueLleno] = useState<boolean>(false);
     const [condicionPago, setCondicionPago] = useState<"Cuenta Corriente" | "Pago Anticipado">("Cuenta Corriente");
-    const [fechaCarga, setFechaCarga] = useState<string>("");
+    // Estados nuevos para viáticos
+    const [viaticosMonto, setViaticosMonto] = useState<string>("");
+    const [viaticosMoneda, setViaticosMoneda] = useState<"ARS" | "USD" | "Gs">("ARS");
+    // const [fechaCarga, setFechaCarga] = useState<string>("");
     const router = useRouter();
 
     useEffect(() => {
@@ -58,10 +66,8 @@ export default function CrearOrden() {
             try {
                 const res = await fetch(`/api/empresas/usuario/${userId}`);
                 if (!res.ok) throw new Error(`Error HTTP: ${res.status} - ${res.statusText}`);
-
                 const data = await res.json();
                 if (!data || !data._id) throw new Error("No se encontró el ID de la empresa");
-
                 setEmpresaId(data._id);
             } catch (error) {
                 console.error("❌ Error obteniendo empresa:", error);
@@ -75,18 +81,17 @@ export default function CrearOrden() {
         const fetchData = async () => {
             try {
                 const [resOrdenes, resUnidades, resChoferes] = await Promise.all([
-                    fetch(`/api/ordenes?empresaId=${empresaId}`), // ✅ Solo trae órdenes de la empresa
+                    fetch(`/api/ordenes?empresaId=${empresaId}`),
                     fetch(`/api/unidades`),
                     fetch(`/api/choferes`),
                 ]);
-
                 const dataOrdenes: Orden[] = await resOrdenes.json();
                 const dataUnidades: Unidad[] = await resUnidades.json();
                 const dataChoferes: Chofer[] = await resChoferes.json();
 
                 setUnidades(dataUnidades.filter(u => u.empresaId === empresaId));
                 setChoferes(dataChoferes.filter(c => c.empresaId === empresaId));
-                setOrdenes(dataOrdenes); // ✅ Ya viene filtrado desde la API
+                setOrdenes(dataOrdenes);
             } catch (error) {
                 console.error("❌ Error obteniendo datos:", error);
             } finally {
@@ -99,26 +104,20 @@ export default function CrearOrden() {
 
     const handleUnidadChange = (unidadId: string) => {
         setSelectedUnidad(unidadId);
-
-        // Buscar la unidad seleccionada
         const unidad = unidades.find(u => u._id === unidadId);
-
-        // Si la unidad tiene un chofer anexado, seleccionarlo automáticamente
         if (unidad?.choferAnexado) {
             setSelectedChofer(unidad.choferAnexado);
         } else {
-            setSelectedChofer(""); // Si no tiene, dejar el campo vacío
+            setSelectedChofer("");
         }
     };
 
     const handleCrearOrden = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!selectedUnidad || !selectedChofer) {
             Swal.fire("Error", "Debes seleccionar una unidad y un chofer.", "error");
             return;
         }
-
         if (!empresaId) {
             Swal.fire("Error", "No se pudo obtener el ID de la empresa.", "error");
             return;
@@ -133,12 +132,15 @@ export default function CrearOrden() {
             importe: tanqueLleno ? undefined : importe ? parseFloat(importe) : undefined,
             tanqueLleno,
             condicionPago,
-            fechaCarga: fechaCarga || undefined,
             estado: "PENDIENTE_AUTORIZACION",
-        };        
+            // Agregamos viáticos
+            viaticos: {
+                monto: viaticosMonto ? parseFloat(viaticosMonto) : undefined,
+                moneda: viaticosMoneda
+            }
+        };
 
-        console.log("📤 Enviando orden a la API:", nuevaOrden); // 🔥 Verificar en consola
-
+        console.log("📤 Enviando orden a la API:", nuevaOrden);
         const res = await fetch(`/api/ordenes`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -146,21 +148,21 @@ export default function CrearOrden() {
         });
 
         const data = await res.json();
-        console.log("📥 Respuesta de la API:", data); // 🔥 Verificar respuesta
-
+        console.log("📥 Respuesta de la API:", data);
         if (res.ok) {
             setOrdenes([...ordenes, data]);
-            Swal.fire("¡Orden Creada!", "La orden ha sido registrada correctamente.", "success").then(() => {
-                router.push("/ordenes"); // 🔥 Redirigir después de confirmar con SweetAlert2
-            });
-
+            Swal.fire("¡Orden Creada!", "La orden ha sido registrada correctamente.", "success")
+                .then(() => {
+                    router.push("/ordenes");
+                });
             // Limpiar el formulario
             setSelectedUnidad("");
             setSelectedChofer("");
             setSelectedProducto("GASOIL_G2");
             setLitros("");
             setImporte("");
-            setFechaCarga("");
+            setViaticosMonto("");
+            setViaticosMoneda("ARS");
         } else {
             Swal.fire("Error", "No se pudo registrar la orden", "error");
         }
@@ -200,11 +202,9 @@ export default function CrearOrden() {
 
     return (
         <div className="max-w-2xl mx-auto p-6 mt-20">
-
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
                 <h2 className="text-2xl font-bold">Crear Órden</h2>
                 <form onSubmit={handleCrearOrden} className="p-4">
-
                     <label className="block font-semibold">Unidad</label>
                     <select
                         className="w-full p-2 border rounded mb-2"
@@ -251,14 +251,14 @@ export default function CrearOrden() {
                         <option value="Pago Anticipado">Pago Anticipado</option>
                     </select>
 
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 items-center mb-2">
                         <label className="block font-semibold">Tanque Lleno</label>
                         <input
                             type="checkbox"
                             checked={tanqueLleno}
                             onChange={handleTanqueLlenoChange}
-                            className="w-6 h-6 mb-2"
-                            disabled={!!litros || !!importe} // 🔹 Se deshabilita si hay litros o importe
+                            className="w-6 h-6"
+                            disabled={!!litros || !!importe}
                         />
                     </div>
 
@@ -269,7 +269,7 @@ export default function CrearOrden() {
                         placeholder="Cantidad de litros"
                         value={litros}
                         onChange={(e) => handleInputChange("litros", e.target.value)}
-                        disabled={tanqueLleno || !!importe} // 🔹 Se deshabilita si tanque lleno o importe está seleccionado
+                        disabled={tanqueLleno || !!importe}
                     />
 
                     <label className="block font-semibold">Importe</label>
@@ -279,23 +279,34 @@ export default function CrearOrden() {
                         placeholder="Importe"
                         value={importe}
                         onChange={(e) => handleInputChange("importe", e.target.value)}
-                        disabled={tanqueLleno || !!litros} // 🔹 Se deshabilita si tanque lleno o litros está seleccionado
+                        disabled={tanqueLleno || !!litros}
                     />
 
-                    {/* <label className="block font-semibold">Fecha de Carga <span className="text-red-600">(Opcional)</span></label>
-                    <input
-                        type="date"
-                        className="w-full p-2 border rounded mb-2"
-                        value={fechaCarga}
-                        onChange={(e) => setFechaCarga(e.target.value)}
-                    /> */}
+                    <label className="block font-semibold">Viáticos <span className="text-red-600">(Opcional)</span></label>
+                    <div className="flex space-x-2 mb-2">
+                        <input
+                            type="number"
+                            className="w-1/2 p-2 border rounded"
+                            placeholder="Monto"
+                            value={viaticosMonto}
+                            onChange={(e) => setViaticosMonto(e.target.value)}
+                        />
+                        <select
+                            className="w-1/2 p-2 border rounded"
+                            value={viaticosMoneda}
+                            onChange={(e) => setViaticosMoneda(e.target.value as "ARS" | "USD" | "Gs")}
+                        >
+                            <option value="ARS">ARS</option>
+                            <option value="USD">USD</option>
+                            <option value="Gs">Gs</option>
+                        </select>
+                    </div>
 
                     <button type="submit" className="w-fit bg-green-600 hover:bg-green-700 font-semibold text-white py-2 px-4 rounded mt-4">
                         + Crear Orden
                     </button>
                 </form>
             </div>
-
         </div>
     );
 }
