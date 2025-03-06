@@ -144,7 +144,6 @@ export default function Dashboard() {
     return (
         <div className="max-w-6xl mx-auto p-6 mt-20">
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
-                <h2 className="text-2xl font-bold">Panel de Administración</h2>
                 <h2 className="text-2xl font-bold mt-2">Órdenes</h2>
 
                 {/* 🔍 Filtros */}
