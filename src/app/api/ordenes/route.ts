@@ -36,7 +36,9 @@ export async function GET(req: Request) {
         } else if (token?.role === "playero") {
             query.estado = "AUTORIZADA";
         } else {
-            if (empresaId) query.empresaId = empresaId;
+            if (empresaId && mongoose.isValidObjectId(empresaId)) {
+                query.empresaId = new mongoose.Types.ObjectId(empresaId);
+            }
             if (estado) query.estado = estado;
             if (fechaDesde || fechaHasta) {
                 query.fechaEmision = {};

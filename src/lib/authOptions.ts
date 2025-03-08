@@ -101,11 +101,9 @@ export const authOptions: NextAuthOptions = {
                 id: token.id as string,
                 email: token.email as string,
                 name: token.name as string,
-                // Se actualiza el tipo para incluir "playero"
-                role: token.role as "chofer" | "admin" | "empresa" | "playero",
+                role: token.role as "admin" | "empresa" | "chofer" | "playero",
                 empresaId: token.empresaId as string | null,
             };
-            console.log("✅ Sesión generada:", session);
             return session;
         },
     },

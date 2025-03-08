@@ -51,7 +51,7 @@ const authOptions: NextAuthOptions = {
                         role: "playero",
                     };
                 } else {
-                    // Lógica para usuarios (admin/empresa) mediante email y contraseña
+                    // Bloque de "else" (usuarios admin/empresa)
                     const user = await Usuario.findOne({ email: credentials?.email });
                     if (!user) throw new Error("Usuario no encontrado");
                     const isValidPassword = await bcrypt.compare(
@@ -65,6 +65,7 @@ const authOptions: NextAuthOptions = {
                         email: user.email,
                         name: user.nombre,
                         role: user.rol, // admin o empresa
+                        empresaId: user.rol === "empresa" ? user._id.toString() : user.empresaId,
                     };
                 }
             },
@@ -78,15 +79,21 @@ const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
+                token.email = user.email;
+                token.name = user.name;
                 token.role = user.role;
-                token.ubicacionId = user.ubicacionId; // Agregado
+                token.empresaId = user.empresaId ?? null;
             }
             return token;
         },
         async session({ session, token }) {
-            session.user.id = token.id as string;
-            session.user.role = token.role as "admin" | "empresa" | "chofer" | "playero";
-            session.user.ubicacionId = token.ubicacionId as string | undefined; // Agregado
+            session.user = {
+                id: token.id as string,
+                email: token.email as string,
+                name: token.name as string,
+                role: token.role as "admin" | "empresa" | "chofer" | "playero",
+                empresaId: token.empresaId as string | null,
+            };
             return session;
         },
     },
