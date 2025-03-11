@@ -10,6 +10,7 @@ interface Empresa {
 }
 
 interface Orden {
+    condicionPago: string;
     playeroId: any;
     ubicacionId: any;
     viaticos?: {
@@ -118,7 +119,7 @@ export default function ListadoAdmin() {
             <h1 className="text-3xl font-bold mb-6 text-center">Listado de Órdenes</h1>
 
             {/* Filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label className="block font-semibold">Empresa</label>
                     <select
@@ -151,7 +152,7 @@ export default function ListadoAdmin() {
                     <label className="block font-semibold">Fecha Desde</label>
                     <input
                         type="date"
-                        className="w-full p-2 border rounded"
+                        className="w-full p-1 border rounded"
                         value={fechaDesde}
                         onChange={(e) => setFechaDesde(e.target.value)}
                     />
@@ -160,10 +161,23 @@ export default function ListadoAdmin() {
                     <label className="block font-semibold">Fecha Hasta</label>
                     <input
                         type="date"
-                        className="w-full p-2 border rounded"
+                        className="w-full p-1 border rounded"
                         value={fechaHasta}
                         onChange={(e) => setFechaHasta(e.target.value)}
                     />
+                </div>
+                <div className="mb-6">
+                    <button
+                        onClick={() => {
+                            setEmpresaFiltro("");
+                            setFiltroEstado("");
+                            setFechaDesde("");
+                            setFechaHasta("");
+                        }}
+                        className="px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded"
+                    >
+                        Limpiar Filtros
+                    </button>
                 </div>
             </div>
 
@@ -179,94 +193,95 @@ export default function ListadoAdmin() {
                 <>
                     <button
                         onClick={exportToExcel}
-                        className="flex mb-4 px-4 py-2 bg-green-600 text-white rounded"
+                        className="flex mb-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
                     >
                         Descargar Excel
                     </button>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full border border-gray-300">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="px-4 py-2 border">Código</th>
-                                    <th className="px-4 py-2 border">Empresa</th>
-                                    <th className="px-4 py-2 border">Producto</th>
-                                    <th className="px-4 py-2 border">Estado</th>
-                                    <th className="px-4 py-2 border">Fecha Emisión</th>
-                                    <th className="px-4 py-2 border">Fecha Carga</th>
-                                    <th className="px-4 py-2 border">Litros</th>
-                                    <th className="px-4 py-2 border">Unidad</th>
-                                    <th className="px-4 py-2 border">Chofer</th>
-                                    <th className="px-4 py-2 border">Monto</th>
-                                    <th className="px-4 py-2 border">Viáticos</th>
-                                    <th className="px-4 py-2 border">Ubicación</th>
-                                    <th className="px-4 py-2 border">Playero</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white">
-                                {ordenes.map((orden) => (
-                                    <tr key={orden._id}>
-                                        <td className="px-4 py-2 border font-semibold">{orden.codigoOrden}</td>
-                                        <td className="px-4 py-2 border">{orden.empresaId.nombre}</td>
-                                        <td className="px-4 py-2 border">
-                                            {orden.producto.replace(/_/g, " ")}
-                                        </td>
-                                        <td
-                                            className={`px-4 py-2 border ${orden.estado === "CARGADA"
-                                                    ? "text-red-600"
-                                                    : orden.estado === "AUTORIZADA"
-                                                        ? "text-green-600"
-                                                        : orden.estado === "PENDIENTE_AUTORIZACION"
-                                                            ? "text-yellow-600"
-                                                            : ""
-                                                }`}
-                                        >
-                                            {orden.estado}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {new Date(orden.fechaEmision).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {orden.fechaCarga
-                                                ? new Date(orden.fechaCarga).toLocaleDateString()
-                                                : "-"}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {orden.tanqueLleno
-                                                ? "Tanque Lleno"
-                                                : (orden.litros !== undefined ? `${orden.litros} L` : "-")}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {typeof orden.unidadId === "object" && orden.unidadId
-                                                ? orden.unidadId.matricula
-                                                : "-"}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {typeof orden.choferId === "object" && orden.choferId
-                                                ? `${orden.choferId.nombre} (${orden.choferId.documento})`
-                                                : "-"}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {orden.monto !== undefined ? orden.monto : "-"}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {orden.viaticos && orden.viaticos.monto != null
-                                                ? `${orden.viaticos.monto} ${orden.viaticos.moneda}`
-                                                : "-"}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {typeof orden.ubicacionId === "object" && orden.ubicacionId
-                                                ? orden.ubicacionId.nombre
-                                                : "-"}
-                                        </td>
-                                        <td className="px-4 py-2 border">
-                                            {typeof orden.playeroId === "object" && orden.playeroId
-                                                ? `${orden.playeroId.nombre} (${orden.playeroId.documento})`
-                                                : "-"}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {ordenes.map((orden) => (
+                            <div
+                                key={orden._id}
+                                className="border border-gray-300 p-4 rounded bg-white shadow"
+                            >
+                                <div className="flex justify-between items-center">
+                                    <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
+                                        {orden.codigoOrden}
+                                    </p>
+                                    <p
+                                        className={`text-sm font-bold ${orden.estado === "PENDIENTE_AUTORIZACION"
+                                            ? "text-yellow-600"
+                                            : orden.estado === "AUTORIZADA"
+                                                ? "text-green-600"
+                                                : "text-red-600"
+                                            }`}
+                                    >
+                                        {orden.estado.replace(/_/g, " ")}
+                                    </p>
+                                </div>
+                                <h2 className="text-lg font-bold mt-2">{orden.empresaId.nombre}</h2>
+                                <p className="text-gray-600 font-bold">
+                                    {orden.producto.replace(/_/g, " ")}
+                                </p>
+                                <p className="text-gray-600">
+                                    <strong>Pago:</strong> {orden.condicionPago}
+                                </p>
+                                {orden.tanqueLleno ? (
+                                    <p className="text-gray-600">
+                                        <strong>Tanque Lleno</strong>
+                                    </p>
+                                ) : orden.litros ? (
+                                    <p className="text-gray-600">
+                                        <strong>Litros:</strong> {orden.litros} L
+                                    </p>
+                                ) : orden.monto ? (
+                                    <p className="text-gray-600">
+                                        <strong>Monto:</strong> {orden.monto}
+                                    </p>
+                                ) : null}
+                                {orden.viaticos && orden.viaticos.monto != null && (
+                                    <p className="text-gray-600">
+                                        <strong>Viáticos:</strong> {orden.viaticos.monto}{" "}
+                                        {orden.viaticos.moneda}
+                                    </p>
+                                )}
+                                {orden.unidadId && (
+                                    <p className="text-gray-600">
+                                        <strong>Matrícula:</strong> {orden.unidadId.matricula}
+                                    </p>
+                                )}
+                                {orden.choferId && (
+                                    <p className="text-gray-600">
+                                        <strong>Chofer:</strong> {orden.choferId.nombre} (
+                                        {orden.choferId.documento})
+                                    </p>
+                                )}
+                                {orden.playeroId &&
+                                    typeof orden.playeroId !== "string" &&
+                                    (
+                                        <p className="text-gray-600">
+                                            <strong>Playero:</strong> {orden.playeroId.nombre} (
+                                            {orden.playeroId.documento})
+                                        </p>
+                                    )}
+                                {orden.ubicacionId &&
+                                    typeof orden.ubicacionId === "object" && (
+                                        <p className="text-gray-600">
+                                            <strong>Ubicación:</strong> {orden.ubicacionId.nombre}
+                                        </p>
+                                    )}
+                                <p className="text-gray-600">
+                                    <strong>Fecha Emisión:</strong>{" "}
+                                    {new Date(orden.fechaEmision).toLocaleDateString()}
+                                </p>
+                                {orden.fechaCarga && (
+                                    <p className="text-gray-600">
+                                        <strong>Fecha Carga:</strong>{" "}
+                                        {new Date(orden.fechaCarga).toLocaleDateString()}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </>
             )}
