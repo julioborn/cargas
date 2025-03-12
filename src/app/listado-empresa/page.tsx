@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import * as XLSX from "xlsx";
@@ -35,42 +34,37 @@ interface Orden {
 
 export default function ListadoEmpresa() {
     const { data: session, status } = useSession();
-    const userId = session?.user?.id;
-    const [empresaFiltro, setEmpresaFiltro] = useState("");
     const [ordenes, setOrdenes] = useState<Orden[]>([]);
+    const [empresaFiltro, setEmpresaFiltro] = useState("");
     const [filtroEstado, setFiltroEstado] = useState("");
     const [fechaDesde, setFechaDesde] = useState("");
     const [fechaHasta, setFechaHasta] = useState("");
     const [loading, setLoading] = useState(false);
     const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
-    // Si el usuario es admin, permitimos elegir de todas las empresas.
-    // Si es "empresa", obtenemos su empresa y la asignamos automáticamente.
+    // Si el usuario tiene rol "empresa", obtenemos su empresa y la asignamos automáticamente
     useEffect(() => {
-        if (!userId) return;
+        if (!session?.user?.id) return;
 
-        const fetchEmpresa = async () => {
-            try {
-                const res = await fetch(`/api/empresas/usuario/${userId}`);
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    throw new Error(`Error HTTP: ${res.status} - ${errorText}`);
+        if (session.user.role === "empresa") {
+            const fetchEmpresa = async () => {
+                try {
+                    const res = await fetch(`/api/empresas/usuario/${session.user.id}`);
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        throw new Error(`Error HTTP: ${res.status} - ${errorText}`);
+                    }
+                    const data = await res.json();
+                    if (!data || !data._id) throw new Error("No se encontró el ID de la empresa");
+                    setEmpresaFiltro(data._id);
+                    console.log("Empresa obtenida:", data);
+                } catch (error) {
+                    console.error("❌ Error obteniendo empresa:", error);
                 }
-                const data = await res.json();
-                if (!data || !data._id) throw new Error("No se encontró el ID de la empresa");
-                // Asignamos el ID de la empresa al filtro
-                setEmpresaFiltro(data._id);
-                console.log("Empresa obtenida:", data);
-            } catch (error) {
-                console.error("❌ Error obteniendo empresa:", error);
-            }
-        };
-
-        // Si el usuario tiene rol "empresa", lo obtenemos; de lo contrario, cargamos todas las empresas
-        if (session?.user?.role === "empresa") {
+            };
             fetchEmpresa();
         } else {
-            // Para admin, también se cargan todas las empresas para filtrar
+            // Para admin se cargan todas las empresas para filtrar
             const fetchEmpresas = async () => {
                 try {
                     const res = await fetch("/api/empresas");
@@ -83,7 +77,7 @@ export default function ListadoEmpresa() {
             };
             fetchEmpresas();
         }
-    }, [userId, session?.user?.role]);
+    }, [session]);
 
     // Función para cargar las órdenes con los filtros
     const fetchOrdenes = async () => {
@@ -109,9 +103,8 @@ export default function ListadoEmpresa() {
         }
     };
 
-    // Llamada automática a fetchOrdenes cuando cambian los filtros
+    // Se llama automáticamente cuando cambian los filtros (y si hay empresaFiltro)
     useEffect(() => {
-        // Solo se carga si hay empresaFiltro (ya sea obtenido automáticamente o seleccionado por admin)
         if (empresaFiltro) {
             fetchOrdenes();
         }
@@ -119,7 +112,6 @@ export default function ListadoEmpresa() {
 
     // Función para exportar a Excel
     const exportToExcel = () => {
-        // Mapea las órdenes a un arreglo de objetos con los campos deseados
         const rows = ordenes.map((orden) => ({
             "Código": orden.codigoOrden,
             "Empresa": orden.empresaId.nombre,
@@ -144,12 +136,9 @@ export default function ListadoEmpresa() {
                 : ""
         }));
 
-        // Crea la hoja de cálculo a partir del arreglo de objetos
         const worksheet = XLSX.utils.json_to_sheet(rows);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Ordenes");
-
-        // Escribe el libro en formato binario y fuerza la descarga
         const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
         const dataBlob = new Blob([excelBuffer], { type: "application/octet-stream" });
         saveAs(dataBlob, "ListadoOrdenes.xlsx");
@@ -161,7 +150,6 @@ export default function ListadoEmpresa() {
 
             {/* Filtros */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {/* Si el usuario es admin, mostramos el filtro de Empresa */}
                 {session?.user?.role !== "empresa" && (
                     <div>
                         <label className="block font-semibold">Empresa</label>
@@ -210,6 +198,7 @@ export default function ListadoEmpresa() {
                         onChange={(e) => setFechaHasta(e.target.value)}
                     />
                 </div>
+                {/* Botón para limpiar filtros (ocupa la fila completa en md) */}
                 <div className="md:col-span-4">
                     <button
                         onClick={() => {
@@ -242,6 +231,7 @@ export default function ListadoEmpresa() {
                         Descargar Excel
                     </button>
 
+                    {/* Visualización en cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {ordenes.map((orden) => (
                             <div
@@ -321,7 +311,6 @@ export default function ListadoEmpresa() {
                             </div>
                         ))}
                     </div>
-
                 </>
             )}
         </div>
