@@ -7,10 +7,12 @@ import Swal from "sweetalert2";
 
 interface Chofer {
     _id: string;
-    empresaId: string;
+    // Puede ser un string o un objeto con _id y nombre
+    empresaId: { _id: string; nombre: string } | string;
     nombre: string;
     documento: string;
 }
+
 
 export default function Choferes() {
     const { data: session, status } = useSession();
@@ -50,7 +52,12 @@ export default function Choferes() {
                 if (!res.ok) throw new Error("No se pudo obtener la lista de choferes");
 
                 const data: Chofer[] = await res.json();
-                const choferesFiltrados = empresaId ? data.filter(chofer => chofer.empresaId === empresaId) : [];
+                const choferesFiltrados = empresaId
+                    ? data.filter(chofer => {
+                        const id = typeof chofer.empresaId === "object" ? chofer.empresaId._id : chofer.empresaId;
+                        return id === empresaId;
+                    })
+                    : [];
                 setChoferes(choferesFiltrados);
             } catch (error) {
                 console.error("❌ Error obteniendo choferes:", error);

@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
 
-// 📌 Obtener todos los choferes de una empresa
-export async function GET() {
+export async function GET(req: Request) {
     try {
         await connectMongoDB();
-        const choferes = await Chofer.find({});
-        return NextResponse.json(choferes); // ✅ Aseguramos que devolvemos un array
+        // Se usa populate para traer solo el campo 'nombre' de la empresa
+        const choferes = await Chofer.find({}).populate("empresaId", "nombre");
+        return NextResponse.json(choferes); // Devolvemos el array de choferes
     } catch (error) {
         console.error("❌ Error en la API de choferes:", error);
         return NextResponse.json({ error: "Error al obtener choferes" }, { status: 500 });

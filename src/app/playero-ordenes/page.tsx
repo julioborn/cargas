@@ -13,9 +13,10 @@ interface Unidad {
     matricula: string;
 }
 
-interface Chofer {
+interface Chofer { 
     nombre: string;
     documento: string;
+    empresaId: Empresa;
 }
 
 interface Playero {
@@ -51,7 +52,6 @@ export default function PlayeroOrdenes() {
     useEffect(() => {
         const fetchOrdenes = async () => {
             try {
-                // Se filtran órdenes autorizadas
                 const params = new URLSearchParams({ estado: "AUTORIZADA" }).toString();
                 const res = await fetch(`/api/ordenes?${params}`);
                 if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
@@ -73,7 +73,6 @@ export default function PlayeroOrdenes() {
             if (!resUbicaciones.ok) throw new Error("Error al obtener ubicaciones");
             const ubicacionesData = await resUbicaciones.json();
 
-            // Determinamos la ubicación por defecto usando la asignada al playero
             let defaultUbicacion = "";
             if (
                 orden.playeroId &&
@@ -85,7 +84,6 @@ export default function PlayeroOrdenes() {
             }
             console.log("defaultUbicacion:", defaultUbicacion);
 
-            // Construimos las opciones del <select>
             const ubicacionOptions = ubicacionesData
                 .map((u: { _id: string; nombre: string }) => {
                     const selected =
@@ -98,9 +96,9 @@ export default function PlayeroOrdenes() {
                 title: "Finalizar Carga",
                 html:
                     `<select id="swal-ubicacion" class="swal2-input w-72">
-                        <option value="">Selecciona una ubicación </option>
-                        ${ubicacionOptions}
-                    </select>` +
+              <option value="">Selecciona una ubicación</option>
+              ${ubicacionOptions}
+           </select>` +
                     '<input id="swal-input2" class="swal2-input w-72" placeholder="Litros Cargados" type="number" step="0.01">',
                 focusConfirm: false,
                 preConfirm: () => {
@@ -135,6 +133,46 @@ export default function PlayeroOrdenes() {
         }
     };
 
+    const verifyChofer = async () => {
+        const { value: dni } = await Swal.fire({
+            title: "Verificar Chofer",
+            input: "text",
+            inputLabel: "Ingresa el DNI del chofer",
+            inputPlaceholder: "DNI",
+            showCancelButton: true,
+            preConfirm: (value) => {
+                if (!value) {
+                    Swal.showValidationMessage("Debes ingresar un DNI");
+                }
+                return value;
+            },
+        });
+        if (dni) {
+            try {
+                const res = await fetch(`/api/choferes?documento=${dni}`);
+                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+                const data = await res.json();
+                // Si la API devuelve un array, buscamos la coincidencia exacta
+                const chofer =
+                    Array.isArray(data) ? data.find((c) => c.documento === dni) : data;
+                if (!chofer) {
+                    Swal.fire("Error", "Chofer no encontrado", "error");
+                    return;
+                }
+                Swal.fire({
+                    title: "Chofer Encontrado",
+                    html: `<p><strong>Nombre:</strong> ${chofer.nombre}</p>
+                        <p><strong>DNI:</strong> ${chofer.documento}</p>
+                        <p><strong>Empresa:</strong> ${chofer.empresaId?.nombre || "-"}</p>
+                    `,
+                });
+            } catch (error) {
+                console.error("Error al buscar chofer:", error);
+                Swal.fire("Error", "No se pudo verificar el chofer", "error");
+            }
+        }
+    };
+
     if (status === "loading" || loading) {
         return (
             <div className="flex items-center justify-center h-screen text-white">
@@ -149,7 +187,15 @@ export default function PlayeroOrdenes() {
 
     return (
         <div className="max-w-4xl mx-auto p-6 mt-16">
-            <h1 className="text-3xl font-bold mb-6 text-center">Órdenes Autorizadas</h1>
+            <div className="flex items-center justify-between mb-4">
+                <h1 className="text-3xl font-bold">Órdenes Autorizadas</h1>
+                <button
+                    onClick={verifyChofer}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                    Verificar Chofer
+                </button>
+            </div>
             <div className="mb-4">
                 <input
                     type="text"
@@ -171,48 +217,42 @@ export default function PlayeroOrdenes() {
                                         <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
                                             {orden.codigoOrden}
                                         </p>
-                                        <p className="font-bold text-lg">
-                                            {orden.empresaId.nombre}
-                                        </p>
+                                        <p className="font-bold text-lg">{orden.empresaId.nombre}</p>
                                         <p>
-                                            <strong>Producto:</strong>{" "}
-                                            {orden.producto.replace(/_/g, " ")}
+                                            <strong>Producto:</strong> {orden.producto.replace(/_/g, " ")}
                                         </p>
                                         {orden.tanqueLleno ? (
-                                            <p>
+                                            <p className="text-gray-600 font-normal">
                                                 <strong>Tanque Lleno</strong>
                                             </p>
                                         ) : orden.litros ? (
-                                            <p>
+                                            <p className="text-gray-600">
                                                 <strong>Litros:</strong> {orden.litros} L
                                             </p>
                                         ) : orden.monto ? (
-                                            <p>
+                                            <p className="text-gray-600">
                                                 <strong>Monto:</strong> {orden.monto}
                                             </p>
                                         ) : null}
-                                        <p>
-                                            <strong>Fecha Emisión:</strong>{" "}
-                                            {new Date(orden.fechaEmision).toLocaleDateString()}
+                                        <p className="text-gray-600">
+                                            <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}
                                         </p>
                                         {orden.fechaCarga && (
-                                            <p>
-                                                <strong>Fecha Carga:</strong>{" "}
-                                                {new Date(orden.fechaCarga).toLocaleDateString()}
+                                            <p className="text-gray-600">
+                                                <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
                                             </p>
                                         )}
                                         {orden.unidadId && (
-                                            <p>
+                                            <p className="text-gray-600">
                                                 <strong>Matrícula:</strong> {orden.unidadId.matricula}
                                             </p>
                                         )}
                                         {orden.choferId && (
-                                            <p>
-                                                <strong>Chofer:</strong> {orden.choferId.nombre} (
-                                                {orden.choferId.documento})
+                                            <p className="text-gray-600">
+                                                <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
                                             </p>
                                         )}
-                                        <p>
+                                        <p className="text-gray-600">
                                             <span className="font-bold text-green-600">
                                                 {orden.estado.replace(/_/g, " ")}
                                             </span>
