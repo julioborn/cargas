@@ -13,7 +13,6 @@ interface Chofer {
     documento: string;
 }
 
-
 export default function Choferes() {
     const { data: session, status } = useSession();
     const userId = session?.user?.id;
