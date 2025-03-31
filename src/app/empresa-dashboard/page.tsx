@@ -12,6 +12,8 @@ interface Empresa {
     ruc_cuit: string;
     direccion: string;
     telefono: string;
+    ciudad: string;
+    pais: string;
 }
 
 interface Unidad {
@@ -103,6 +105,8 @@ export default function EmpresaDashboard() {
         <input id="swal-ruc_cuit" class="swal2-input" value="${empresa.ruc_cuit}" placeholder="RUC/CUIT">
         <input id="swal-direccion" class="swal2-input" value="${empresa.direccion}" placeholder="Dirección">
         <input id="swal-telefono" class="swal2-input" value="${empresa.telefono}" placeholder="Teléfono">
+        <input id="swal-telefono" class="swal2-input" value="${empresa.ciudad}" placeholder="Ciudad">
+        <input id="swal-telefono" class="swal2-input" value="${empresa.pais}" placeholder="País">
         `,
             showCancelButton: true,
             confirmButtonText: "Guardar cambios",
@@ -112,6 +116,8 @@ export default function EmpresaDashboard() {
                     ruc_cuit: (document.getElementById("swal-ruc_cuit") as HTMLInputElement).value,
                     direccion: (document.getElementById("swal-direccion") as HTMLInputElement).value,
                     telefono: (document.getElementById("swal-telefono") as HTMLInputElement).value,
+                    ciudad: (document.getElementById("swal-ciudad") as HTMLInputElement).value,
+                    pais: (document.getElementById("swal-pais") as HTMLInputElement).value,
                 };
             },
         });
@@ -180,6 +186,14 @@ export default function EmpresaDashboard() {
                             <p>
                                 <span className="font-semibold text-gray-700 text-lg">Teléfono:</span>{" "}
                                 {empresa.telefono}
+                            </p>
+                            <p>
+                                <span className="font-semibold text-gray-700 text-lg">Ciudad:</span>{" "}
+                                {empresa.ciudad}
+                            </p>
+                            <p>
+                                <span className="font-semibold text-gray-700 text-lg">País:</span>{" "}
+                                {empresa.pais}
                             </p>
                         </div>
                     </div>
