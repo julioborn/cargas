@@ -13,7 +13,7 @@ interface Unidad {
     matricula: string;
 }
 
-interface Chofer { 
+interface Chofer {
     nombre: string;
     documento: string;
     empresaId: Empresa;
@@ -159,12 +159,22 @@ export default function PlayeroOrdenes() {
                     Swal.fire("Error", "Chofer no encontrado", "error");
                     return;
                 }
+                // Si el chofer no trae la empresa poblada (es un string), la buscamos
+                let empresaNombre = "-";
+                if (typeof chofer.empresaId === "string") {
+                    const resEmpresa = await fetch(`/api/empresas/${chofer.empresaId}`);
+                    if (resEmpresa.ok) {
+                        const empresaData = await resEmpresa.json();
+                        empresaNombre = empresaData.nombre;
+                    }
+                } else if (typeof chofer.empresaId === "object") {
+                    empresaNombre = chofer.empresaId.nombre;
+                }
                 Swal.fire({
                     title: "Chofer Encontrado",
                     html: `<p><strong>Nombre:</strong> ${chofer.nombre}</p>
-                        <p><strong>DNI:</strong> ${chofer.documento}</p>
-                        <p><strong>Empresa:</strong> ${chofer.empresaId?.nombre || "-"}</p>
-                    `,
+                <p><strong>DNI:</strong> ${chofer.documento}</p>
+                <p><strong>Empresa:</strong> ${empresaNombre}</p>`,
                 });
             } catch (error) {
                 console.error("Error al buscar chofer:", error);
