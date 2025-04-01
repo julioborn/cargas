@@ -16,7 +16,7 @@ interface Unidad {
 interface Chofer {
     nombre: string;
     documento: string;
-    empresaId: Empresa;
+    empresaId: Empresa | string;
 }
 
 interface Playero {
@@ -68,7 +68,6 @@ export default function PlayeroOrdenes() {
 
     const finalizarCarga = async (orden: Orden) => {
         try {
-            // Consultamos las ubicaciones disponibles desde la API
             const resUbicaciones = await fetch("/api/ubicaciones");
             if (!resUbicaciones.ok) throw new Error("Error al obtener ubicaciones");
             const ubicacionesData = await resUbicaciones.json();
@@ -96,13 +95,15 @@ export default function PlayeroOrdenes() {
                 title: "Finalizar Carga",
                 html:
                     `<select id="swal-ubicacion" class="swal2-input w-72">
-              <option value="">Selecciona una ubicación</option>
-              ${ubicacionOptions}
-           </select>` +
+            <option value="">Selecciona una ubicación</option>
+            ${ubicacionOptions}
+          </select>` +
                     '<input id="swal-input2" class="swal2-input w-72" placeholder="Litros Cargados" type="number" step="0.01">',
                 focusConfirm: false,
                 preConfirm: () => {
-                    const ubicacion = (document.getElementById("swal-ubicacion") as HTMLSelectElement).value;
+                    const ubicacion = (document.getElementById(
+                        "swal-ubicacion"
+                    ) as HTMLSelectElement).value;
                     const litrosStr = (document.getElementById("swal-input2") as HTMLInputElement).value;
                     const litros = parseFloat(litrosStr);
                     if (!ubicacion || isNaN(litros)) {
@@ -133,11 +134,12 @@ export default function PlayeroOrdenes() {
         }
     };
 
-    const verifyChofer = async () => {
+    // Función para verificar tanto choferes como empleados
+    const verifyPersona = async () => {
         const { value: dni } = await Swal.fire({
-            title: "Verificar Chofer",
+            title: "Verificar Chofer/Empleado",
             input: "text",
-            inputLabel: "Ingresa el DNI del chofer",
+            inputLabel: "Ingresa el DNI",
             inputPlaceholder: "DNI",
             showCancelButton: true,
             preConfirm: (value) => {
@@ -149,36 +151,68 @@ export default function PlayeroOrdenes() {
         });
         if (dni) {
             try {
-                const res = await fetch(`/api/choferes?documento=${dni}`);
-                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-                const data = await res.json();
-                // Si la API devuelve un array, buscamos la coincidencia exacta
-                const chofer =
-                    Array.isArray(data) ? data.find((c) => c.documento === dni) : data;
-                if (!chofer) {
-                    Swal.fire("Error", "Chofer no encontrado", "error");
+                // Buscar en choferes
+                const resChoferes = await fetch(`/api/choferes?documento=${dni}`);
+                let chofer;
+                if (resChoferes.ok) {
+                    const dataChofer = await resChoferes.json();
+                    chofer = Array.isArray(dataChofer)
+                        ? dataChofer.find((c: any) => c.documento === dni)
+                        : dataChofer;
+                }
+                // Buscar en empleados
+                const resEmpleados = await fetch(`/api/empleados?documento=${dni}`);
+                let empleado;
+                if (resEmpleados.ok) {
+                    const dataEmpleado = await resEmpleados.json();
+                    empleado = Array.isArray(dataEmpleado)
+                        ? dataEmpleado.find((e: any) => e.documento === dni)
+                        : dataEmpleado;
+                }
+                if (!chofer && !empleado) {
+                    Swal.fire("Error", "No se encontró chofer o empleado", "error");
                     return;
                 }
-                // Si el chofer no trae la empresa poblada (es un string), la buscamos
-                let empresaNombre = "-";
-                if (typeof chofer.empresaId === "string") {
-                    const resEmpresa = await fetch(`/api/empresas/${chofer.empresaId}`);
-                    if (resEmpresa.ok) {
-                        const empresaData = await resEmpresa.json();
-                        empresaNombre = empresaData.nombre;
+                if (chofer) {
+                    let empresaNombre = "-";
+                    if (typeof chofer.empresaId === "string") {
+                        const resEmpresa = await fetch(`/api/empresas/${chofer.empresaId}`);
+                        if (resEmpresa.ok) {
+                            const empresaData = await resEmpresa.json();
+                            empresaNombre = empresaData.nombre;
+                        }
+                    } else if (typeof chofer.empresaId === "object") {
+                        empresaNombre = chofer.empresaId.nombre;
                     }
-                } else if (typeof chofer.empresaId === "object") {
-                    empresaNombre = chofer.empresaId.nombre;
+                    Swal.fire({
+                        title: "Resultado",
+                        html: `<p><strong>Tipo:</strong> Chofer</p>
+                   <p><strong>Nombre:</strong> ${chofer.nombre}</p>
+                   <p><strong>DNI:</strong> ${chofer.documento}</p>
+                   <p><strong>Empresa:</strong> ${empresaNombre}</p>`,
+                    });
+                } else if (empleado) {
+                    let empresaNombre = "-";
+                    if (typeof empleado.empresaId === "string") {
+                        const resEmpresa = await fetch(`/api/empresas/${empleado.empresaId}`);
+                        if (resEmpresa.ok) {
+                            const empresaData = await resEmpresa.json();
+                            empresaNombre = empresaData.nombre;
+                        }
+                    } else if (typeof empleado.empresaId === "object") {
+                        empresaNombre = empleado.empresaId.nombre;
+                    }
+                    Swal.fire({
+                        title: "Resultado",
+                        html: `<p><strong>Tipo:</strong> Empleado</p>
+                   <p><strong>Nombre:</strong> ${empleado.nombre}</p>
+                   <p><strong>DNI:</strong> ${empleado.documento}</p>
+                   <p><strong>Empresa:</strong> ${empresaNombre}</p>`,
+                    });
                 }
-                Swal.fire({
-                    title: "Chofer Encontrado",
-                    html: `<p><strong>Nombre:</strong> ${chofer.nombre}</p>
-                <p><strong>DNI:</strong> ${chofer.documento}</p>
-                <p><strong>Empresa:</strong> ${empresaNombre}</p>`,
-                });
             } catch (error) {
-                console.error("Error al buscar chofer:", error);
-                Swal.fire("Error", "No se pudo verificar el chofer", "error");
+                console.error("Error al verificar chofer o empleado:", error);
+                Swal.fire("Error", "No se pudo verificar la información", "error");
             }
         }
     };
@@ -200,10 +234,10 @@ export default function PlayeroOrdenes() {
             <div className="flex items-center justify-between mb-4">
                 <h1 className="text-3xl font-bold">Órdenes Autorizadas</h1>
                 <button
-                    onClick={verifyChofer}
+                    onClick={verifyPersona}
                     className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                 >
-                    Verificar Chofer
+                    Verificar Chofer/Empleado
                 </button>
             </div>
             <div className="mb-4">
@@ -216,7 +250,9 @@ export default function PlayeroOrdenes() {
                 />
             </div>
             {ordenes.length === 0 ? (
-                <p className="text-center text-gray-600">No hay órdenes autorizadas pendientes de carga.</p>
+                <p className="text-center text-gray-600">
+                    No hay órdenes autorizadas pendientes de carga.
+                </p>
             ) : (
                 <div className="bg-white rounded shadow">
                     <ul className="space-y-4">
@@ -229,7 +265,8 @@ export default function PlayeroOrdenes() {
                                         </p>
                                         <p className="font-bold text-lg">{orden.empresaId.nombre}</p>
                                         <p>
-                                            <strong>Producto:</strong> {orden.producto.replace(/_/g, " ")}
+                                            <strong>Producto:</strong>{" "}
+                                            {orden.producto.replace(/_/g, " ")}
                                         </p>
                                         {orden.tanqueLleno ? (
                                             <p className="text-gray-600 font-normal">
@@ -245,11 +282,13 @@ export default function PlayeroOrdenes() {
                                             </p>
                                         ) : null}
                                         <p className="text-gray-600">
-                                            <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}
+                                            <strong>Fecha Emisión:</strong>{" "}
+                                            {new Date(orden.fechaEmision).toLocaleDateString()}
                                         </p>
                                         {orden.fechaCarga && (
                                             <p className="text-gray-600">
-                                                <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
+                                                <strong>Fecha Carga:</strong>{" "}
+                                                {new Date(orden.fechaCarga).toLocaleDateString()}
                                             </p>
                                         )}
                                         {orden.unidadId && (
@@ -259,7 +298,8 @@ export default function PlayeroOrdenes() {
                                         )}
                                         {orden.choferId && (
                                             <p className="text-gray-600">
-                                                <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
+                                                <strong>Chofer:</strong>{" "}
+                                                {orden.choferId.nombre} ({orden.choferId.documento})
                                             </p>
                                         )}
                                         <p className="text-gray-600">
