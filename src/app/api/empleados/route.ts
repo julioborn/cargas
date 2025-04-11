@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Empleado from "@/models/Empleado";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
         await connectMongoDB();
-        const empleados = await Empleado.find({});
-        return NextResponse.json(empleados); // ✅ Aseguramos que devolvemos un array
 
+        const { searchParams } = new URL(req.url);
+        const empresaId = searchParams.get("empresaId");
+
+        const filtro = empresaId ? { empresaId } : {};
+
+        const empleados = await Empleado.find(filtro);
+
+        return NextResponse.json(empleados);
     } catch (error) {
         console.error("❌ Error en la API de empleados:", error);
         return NextResponse.json({ error: "Error al obtener empleados" }, { status: 500 });

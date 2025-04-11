@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Chofer from "@/models/Chofer";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
         await connectMongoDB();
-        const choferes = await Chofer.find({});
-        return NextResponse.json(choferes); // ✅ Aseguramos que devolvemos un array
+
+        const { searchParams } = new URL(req.url);
+        const empresaId = searchParams.get("empresaId");
+
+        // Si se pasa empresaId, filtramos; si no, devolvemos todo
+        const filtro = empresaId ? { empresaId } : {};
+
+        const choferes = await Chofer.find(filtro);
+        return NextResponse.json(choferes);
 
     } catch (error) {
         console.error("❌ Error en la API de choferes:", error);

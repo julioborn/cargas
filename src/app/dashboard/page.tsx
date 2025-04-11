@@ -1,283 +1,73 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
-
-interface Empresa {
-    _id: string;
-    nombre: string;
-}
-
-interface Unidad {
-    matricula: string;
-}
-
-interface Chofer {
-    nombre: string;
-    documento: string;
-}
-
-interface Playero {
-    _id: string;
-    nombre: string;
-    documento: string;
-}
-
-interface Orden {
-    codigoOrden: string;
-    _id: string;
-    empresaId: Empresa;
-    producto: string;
-    tanqueLleno: boolean;
-    litros?: number;
-    monto?: number;
-    estado: string;
-    fechaEmision: string;
-    fechaCarga?: string;
-    unidadId?: Unidad;
-    choferId?: Chofer;
-    playeroId?: string | Playero;
-    condicionPago: "Cuenta Corriente" | "Pago Anticipado";
-    viaticos?: {
-        monto?: number;
-        moneda: "ARS" | "USD" | "Gs";
-    };
-}
 
 export default function Dashboard() {
-    const { data: session } = useSession();
     const router = useRouter();
-    const [ordenes, setOrdenes] = useState<Orden[]>([]);
-    const [empresas, setEmpresas] = useState<Empresa[]>([]);
-    const [filtros, setFiltros] = useState({
-        empresaId: "",
-        estado: "",
-        fechaDesde: "",
-        fechaHasta: "",
-    });
-
-    useEffect(() => {
-        const fetchEmpresas = async () => {
-            try {
-                const res = await fetch("/api/empresas");
-                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-                const data = await res.json();
-
-                console.log("📡 Empresas cargadas desde API:", data);
-
-                if (!Array.isArray(data)) {
-                    console.error("❌ Error: La API no devuelve un array.");
-                    return;
-                }
-
-                setEmpresas(data);
-            } catch (error) {
-                console.error("❌ Error al cargar empresas:", error);
-            }
-        };
-        fetchEmpresas();
-    }, []);
-
-    useEffect(() => {
-        const fetchOrdenes = async () => {
-            try {
-                const params = new URLSearchParams(
-                    Object.fromEntries(
-                        Object.entries(filtros).filter(([_, v]) => v !== "")
-                    )
-                ).toString();
-
-                const res = await fetch(`/api/ordenes?${params}`);
-                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-                const data = await res.json();
-                console.log("Órdenes filtradas:", data);
-                setOrdenes(data);
-            } catch (error) {
-                console.error("Error al cargar órdenes:", error);
-            }
-        };
-        fetchOrdenes();
-    }, [filtros]);
-
-    const actualizarEstado = async (id: string, nuevoEstado: string) => {
-        const res = await fetch("/api/ordenes", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, nuevoEstado }),
-        });
-
-        if (res.ok) {
-            Swal.fire(
-                "Actualizado",
-                `La orden ha sido marcada como "${nuevoEstado}".`,
-                "success"
-            );
-            setOrdenes((prev) =>
-                prev.map((orden) =>
-                    orden._id === id ? { ...orden, estado: nuevoEstado } : orden
-                )
-            );
-        } else {
-            Swal.fire("Error", "No se pudo actualizar la orden", "error");
-        }
-    };
-
-    const formatFecha = (fecha: string) =>
-        fecha ? new Date(fecha).toISOString().split("T")[0] : "";
-
-    const handleFiltroChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        const { name, value } = e.target;
-        setFiltros((prev) => ({
-            ...prev,
-            [name]: name.includes("fecha") ? formatFecha(value) : value,
-        }));
-    };
-
-    const ordenesOrdenadas = ordenes.slice().sort(
-        (a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime()
-    );
 
     return (
-        <div className="max-w-6xl mx-auto p-6 mt-20">
-            <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
-                <h2 className="text-2xl font-bold mt-2">Órdenes</h2>
-
-                {/* 🔍 Filtros */}
-                <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                    <select
-                        value={filtros.empresaId}
-                        onChange={(e) =>
-                            setFiltros({ ...filtros, empresaId: e.target.value })
-                        }
-                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
+        <div className="max-w-xl mx-auto p-6 mt-28 bg-white rounded-md border border-black">
+            <h1 className="text-3xl font-bold mb-6 text-center">Administrador</h1>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                <button
+                    onClick={() => router.push("/ordenes-admin")}
+                    className="flex justify-center items-center gap-1 bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700"
+                >
+                    Órdenes
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-5 w-5"
                     >
-                        <option value="">Todas las Empresas</option>
-                        {empresas.map((empresa) => (
-                            <option key={empresa._id} value={empresa._id}>
-                                {empresa.nombre}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={filtros.estado}
-                        onChange={(e) =>
-                            setFiltros({ ...filtros, estado: e.target.value })
-                        }
-                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
+                        <path
+                            fillRule="evenodd"
+                            d="M15.988 3.012A2.25 2.25 0 0 1 18 5.25v6.5A2.25 2.25 0 0 1 15.75 14H13.5V7A2.5 2.5 0 0 0 11 4.5H8.128a2.252 2.252 0 0 1 1.884-1.488A2.25 2.25 0 0 1 12.25 1h1.5a2.25 2.25 0 0 1 2.238 2.012ZM11.5 3.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75v.25h-3v-.25Z"
+                            clipRule="evenodd"
+                        />
+                        <path
+                            fillRule="evenodd"
+                            d="M2 7a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7Zm2 3.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Zm0 3.5a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                </button>
+                <button
+                    onClick={() => router.push("/playeros")}
+                    className="flex justify-center items-center gap-1 bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700"
+                >
+                    Playeros
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                        <path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" />
+                    </svg>
+                </button>
+                <button
+                    onClick={() => router.push("/listado-admin")}
+                    className="flex justify-center items-center gap-1 bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700"
+                >
+                    Listado
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-5 h-5"
                     >
-                        <option value="">Todos los Estados</option>
-                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
-                        <option value="AUTORIZADA">Pendiente de Carga</option>
-                        <option value="CARGADA">Cargada</option>
-                    </select>
-
-                    {/* <input
-                        type="date"
-                        name="fechaDesde"
-                        value={filtros.fechaDesde}
-                        onChange={handleFiltroChange}
-                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
-                    /> */}
-                    {/* <input
-                        type="date"
-                        name="fechaHasta"
-                        value={filtros.fechaHasta}
-                        onChange={handleFiltroChange}
-                        className="p-2 border border-gray-400 rounded w-full sm:w-auto"
-                    /> */}
-                </div>
-
-                {/* 📜 Lista de Órdenes */}
-                <div className="mt-4 relative flex flex-col border border-gray-400 rounded col-span-2">
-                    <ul className="max-h-96 overflow-y-auto">
-                        {ordenesOrdenadas.map((orden) => (
-                            <li key={orden._id} className="border border-gray-300 p-4 rounded mb-2">
-                                <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
-                                    {orden.codigoOrden}
-                                </p>
-                                <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
-                                <p className="text-gray-600 font-bold">
-                                    {orden.producto.replace(/_/g, " ")}
-                                </p>
-
-                                {orden.tanqueLleno ? (
-                                    <p className="text-gray-600 font-normal">
-                                        <strong>Tanque Lleno</strong>
-                                    </p>
-                                ) : orden.litros ? (
-                                    <p className="text-gray-600">
-                                        <strong>Litros:</strong> {orden.litros} L
-                                    </p>
-                                ) : orden.monto ? (
-                                    <p className="text-gray-600">
-                                        <strong>Monto:</strong> {orden.monto}
-                                    </p>
-                                ) : null}
-                                <p className="text-gray-600">
-                                    <strong>Pago: </strong> {orden.condicionPago}
-                                </p>
-                                {orden.choferId && (
-                                    <p className="text-gray-600">
-                                        <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
-                                    </p>
-                                )}
-                                {orden.unidadId && (
-                                    <p className="text-gray-600">
-                                        <strong>Matrícula:</strong> {orden.unidadId.matricula}
-                                    </p>
-                                )}
-                                {orden.playeroId && typeof orden.playeroId !== "string" && (
-                                    <p className="text-gray-600">
-                                        <strong>Playero:</strong> {orden.playeroId.nombre} ({orden.playeroId.documento})
-                                    </p>
-                                )}
-                                <p className="text-gray-600">
-                                    <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}
-                                </p>
-                                {orden.fechaCarga && (
-                                    <p className="text-gray-600">
-                                        <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
-                                    </p>
-                                )}
-                                {orden.viaticos && orden.viaticos.monto != null && (
-                                    <p className="text-gray-600">
-                                        <strong>Viáticos:</strong> {orden.viaticos.monto} {orden.viaticos.moneda}
-                                    </p>
-                                )}
-                                <p className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION" ? "text-yellow-600" :
-                                    orden.estado === "AUTORIZADA" ? "text-green-600" :
-                                        "text-red-600"
-                                    }`}>
-                                    {orden.estado.replace(/_/g, " ")}
-                                </p>
-                                {/* 🛠️ Botones de Acción */}
-                                <div className="flex gap-2 mt-2">
-                                    {orden.estado === "PENDIENTE_AUTORIZACION" && (
-                                        <button
-                                            onClick={() => actualizarEstado(orden._id, "AUTORIZADA")}
-                                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                                        >
-                                            Autorizar
-                                        </button>
-                                    )}
-                                    {orden.estado === "AUTORIZADA" && (
-                                        <button
-                                            onClick={() => actualizarEstado(orden._id, "CARGADA")}
-                                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                                        >
-                                            Finalizar
-                                        </button>
-                                    )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                        <path
+                            fillRule="evenodd"
+                            d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75ZM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10Zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75ZM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1H2.99a1 1 0 01-1-1v-.01ZM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1H2.99a1 1 0 01-1-1v-.01ZM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1H2.99a1 1 0 01-1-1V10Z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                </button>
+                <button
+                    onClick={() => router.push("/empresas-admin")}
+                    className="flex justify-center items-center gap-1 bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700"
+                >
+                    Empresas
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                        <path d="M14.916 2.404a.75.75 0 0 1-.32 1.011l-.596.31V17a1 1 0 0 1-1 1h-2.26a.75.75 0 0 1-.75-.75v-3.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 1-.75.75h-3.5a.75.75 0 0 1 0-1.5H2V9.957a.75.75 0 0 1-.596-1.372L2 8.275V5.75a.75.75 0 0 1 1.5 0v1.745l10.404-5.41a.75.75 0 0 1 1.012.319ZM15.861 8.57a.75.75 0 0 1 .736-.025l1.999 1.04A.75.75 0 0 1 18 10.957V16.5h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1-.75-.75V9.21a.75.75 0 0 1 .361-.64Z" />
+                    </svg>
+                </button>
             </div>
         </div>
     );

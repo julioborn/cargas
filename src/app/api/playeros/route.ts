@@ -6,8 +6,16 @@ import "@/models/Ubicacion"; // Esto registra el modelo Ubicacion
 export async function GET(req: Request) {
     try {
         await connectMongoDB();
-        // Utilizamos populate para reemplazar el id por el objeto de Ubicacion (por ejemplo, solo el campo nombre)
-        const playeros = await Playero.find({}).populate("ubicacionId", "nombre").lean();
+
+        const { searchParams } = new URL(req.url);
+        const empresaId = searchParams.get("empresaId");
+
+        const filtro = empresaId ? { empresaId } : {};
+
+        const playeros = await Playero.find(filtro)
+            .populate("ubicacionId", "nombre")
+            .lean();
+
         return NextResponse.json(playeros);
     } catch (error) {
         console.error("❌ Error obteniendo playeros:", error);

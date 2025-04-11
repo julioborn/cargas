@@ -5,7 +5,14 @@ import Unidad from "@/models/Unidad";
 export async function GET(req: Request) {
     try {
         await connectMongoDB();
-        const unidades = await Unidad.find();
+
+        const { searchParams } = new URL(req.url);
+        const empresaId = searchParams.get("empresaId");
+
+        const filtro = empresaId ? { empresaId } : {};
+
+        const unidades = await Unidad.find(filtro);
+
         return NextResponse.json(unidades, { status: 200 });
     } catch (error) {
         console.error("❌ Error obteniendo unidades:", error);
