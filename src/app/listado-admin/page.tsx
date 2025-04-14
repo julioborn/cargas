@@ -98,7 +98,7 @@ export default function ListadoAdmin() {
             "Unidad": typeof orden.unidadId === "object" && orden.unidadId ? orden.unidadId.matricula : "",
             "Chofer": typeof orden.choferId === "object" && orden.choferId ? `${orden.choferId.nombre} (${orden.choferId.documento})` : "",
             "Monto": orden.monto !== undefined ? orden.monto : "",
-            "Viáticos": orden.viaticos && orden.viaticos.monto != null ? `${orden.viaticos.monto} ${orden.viaticos.moneda}` : "",
+            "Viáticos": orden.viaticos && orden.viaticos.monto != null ? `${orden.viaticos.monto}` : "",
             "Moneda": orden.viaticos && orden.viaticos.monto != null ? `${orden.viaticos.moneda}` : "",
             "Ubicación": typeof orden.ubicacionId === "object" && orden.ubicacionId ? orden.ubicacionId.nombre : "",
             "Playero": typeof orden.playeroId === "object" && orden.playeroId ? `${orden.playeroId.nombre} (${orden.playeroId.documento})` : ""
