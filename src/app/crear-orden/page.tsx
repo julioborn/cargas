@@ -233,6 +233,15 @@ export default function CrearOrden() {
                         ))}
                     </select>
 
+                    {selectedChofer && (
+                        <p className="text-sm text-gray-600 mb-2">
+                            Chofer seleccionado automáticamente:{" "}
+                            {
+                                choferes.find((c) => c._id === selectedChofer)?.nombre
+                            }
+                        </p>
+                    )}
+
                     <label className="block font-semibold">Producto</label>
                     <select className="w-full p-2 border rounded mb-2" value={selectedProducto} onChange={(e) => setSelectedProducto(e.target.value)}>
                         <option value="GASOIL_G2">Gasoil G2</option>

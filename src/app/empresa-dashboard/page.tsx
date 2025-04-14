@@ -296,7 +296,7 @@ export default function EmpresaDashboard() {
                         </button>
 
                         <button
-                            onClick={() => router.push("/ordenes")}
+                            onClick={() => router.push("/crear-orden")}
                             className="w-full flex justify-center items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"                        >
                             Crear Orden
                             <svg
