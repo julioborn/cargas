@@ -50,7 +50,7 @@ export default function HomePage() {
           onClick={handleLogout}
           className="px-6 py-2 text-white bg-red-500 hover:bg-red-600 transition-all duration-300 rounded-md font-semibold shadow-md hover:shadow-lg"
         >
-          Cerrar sesión
+          Cerrar Sesión
         </button>
       </div>
     </div>

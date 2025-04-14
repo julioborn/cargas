@@ -117,8 +117,8 @@ export default function ListadoEmpresa() {
             "Empresa": orden.empresaId.nombre,
             "Producto": orden.producto.replace(/_/g, " "),
             "Estado": orden.estado,
-            "Fecha de Emisión": new Date(orden.fechaEmision).toLocaleDateString(),
-            "Fecha de Carga": orden.fechaCarga ? new Date(orden.fechaCarga).toLocaleDateString() : "",
+            "Fecha de Emisión": new Date(orden.fechaEmision).toLocaleDateString("es-AR"),
+            "Fecha de Carga": orden.fechaCarga ? new Date(orden.fechaCarga).toLocaleDateString("es-AR") : "",
             "Litros / Orden": orden.tanqueLleno
                 ? "Tanque Lleno"
                 : (orden.litros !== undefined ? orden.litros + " L" : ""),
@@ -301,11 +301,11 @@ export default function ListadoEmpresa() {
                                         </p>
                                     )}
                                 <p className="text-gray-600">
-                                    <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString()}
+                                    <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
                                 </p>
                                 {orden.fechaCarga && (
                                     <p className="text-gray-600">
-                                        <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString()}
+                                        <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
                                     </p>
                                 )}
                             </div>

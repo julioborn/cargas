@@ -243,12 +243,12 @@ export default function OrdenesAdmin() {
                                     )}
                                 <p className="text-gray-600">
                                     <strong>Fecha Emisión:</strong>{" "}
-                                    {new Date(orden.fechaEmision).toLocaleDateString()}
+                                    {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
                                 </p>
                                 {orden.fechaCarga && (
                                     <p className="text-gray-600">
                                         <strong>Fecha Carga:</strong>{" "}
-                                        {new Date(orden.fechaCarga).toLocaleDateString()}
+                                        {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
                                     </p>
                                 )}
                                 {orden.viaticos && orden.viaticos.monto != null && (

@@ -90,15 +90,16 @@ export default function ListadoAdmin() {
             "Empresa": orden.empresaId.nombre,
             "Producto": orden.producto.replace(/_/g, " "),
             "Estado": orden.estado,
-            "Fecha de Emisión": new Date(orden.fechaEmision).toLocaleDateString(),
-            "Fecha de Carga": orden.fechaCarga ? new Date(orden.fechaCarga).toLocaleDateString() : "",
+            "Fecha de Emisión": new Date(orden.fechaEmision).toLocaleDateString("es-AR"),
+            "Fecha de Carga": orden.fechaCarga ? new Date(orden.fechaCarga).toLocaleDateString("es-AR") : "",
             "Litros / Orden": orden.tanqueLleno
                 ? "Tanque Lleno"
-                : (orden.litros !== undefined ? orden.litros + " L" : ""),
+                : (orden.litros !== undefined ? orden.litros: ""),
             "Unidad": typeof orden.unidadId === "object" && orden.unidadId ? orden.unidadId.matricula : "",
             "Chofer": typeof orden.choferId === "object" && orden.choferId ? `${orden.choferId.nombre} (${orden.choferId.documento})` : "",
             "Monto": orden.monto !== undefined ? orden.monto : "",
             "Viáticos": orden.viaticos && orden.viaticos.monto != null ? `${orden.viaticos.monto} ${orden.viaticos.moneda}` : "",
+            "Moneda": orden.viaticos && orden.viaticos.monto != null ? `${orden.viaticos.moneda}` : "",
             "Ubicación": typeof orden.ubicacionId === "object" && orden.ubicacionId ? orden.ubicacionId.nombre : "",
             "Playero": typeof orden.playeroId === "object" && orden.playeroId ? `${orden.playeroId.nombre} (${orden.playeroId.documento})` : ""
         }));
@@ -272,12 +273,12 @@ export default function ListadoAdmin() {
                                     )}
                                 <p className="text-gray-600">
                                     <strong>Fecha Emisión:</strong>{" "}
-                                    {new Date(orden.fechaEmision).toLocaleDateString()}
+                                    {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
                                 </p>
                                 {orden.fechaCarga && (
                                     <p className="text-gray-600">
                                         <strong>Fecha Carga:</strong>{" "}
-                                        {new Date(orden.fechaCarga).toLocaleDateString()}
+                                        {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
                                     </p>
                                 )}
                             </div>
