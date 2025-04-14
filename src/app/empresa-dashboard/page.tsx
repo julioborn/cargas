@@ -230,7 +230,7 @@ export default function EmpresaDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 pt-4 border-t border-black w-full max-w-md mx-auto">
 
                         <button
-                            onClick={() => router.push("/ordenes")}
+                            onClick={() => router.push("/empleados")}
                             className="w-full flex justify-center items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"                        >
                             Empleados
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -263,7 +263,7 @@ export default function EmpresaDashboard() {
                         </button>
 
                         <button
-                            onClick={() => router.push("/unidades")}
+                            onClick={() => router.push("/listado-empresa")}
                             className="w-full flex justify-center items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md"                        >
                             Listado
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
