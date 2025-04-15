@@ -97,21 +97,26 @@ export default function PlayeroOrdenes() {
                     `<select id="swal-ubicacion" class="swal2-input w-72">
             <option value="">Selecciona una ubicación</option>
             ${ubicacionOptions}
-          </select>` +
+            </select>` +
                     '<input id="swal-input2" class="swal2-input w-72" placeholder="Litros Cargados" type="number" step="0.01">',
                 focusConfirm: false,
                 preConfirm: () => {
-                    const ubicacion = (document.getElementById(
-                        "swal-ubicacion"
-                    ) as HTMLSelectElement).value;
+                    const ubicacion = (document.getElementById("swal-ubicacion") as HTMLSelectElement).value;
                     const litrosStr = (document.getElementById("swal-input2") as HTMLInputElement).value;
                     const litros = parseFloat(litrosStr);
+
                     if (!ubicacion || isNaN(litros)) {
                         Swal.showValidationMessage("Debes seleccionar la ubicación y los litros cargados");
                         return false;
                     }
+
+                    if (!orden.tanqueLleno && orden.litros && litros > orden.litros) {
+                        Swal.showValidationMessage(`No puedes cargar más de ${orden.litros} litros`);
+                        return false;
+                    }
+
                     return { ubicacion, litros };
-                },
+                }
             });
 
             if (formValues) {
