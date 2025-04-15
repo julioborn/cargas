@@ -94,7 +94,7 @@ export default function CrearOrden() {
 
                 setUnidades(dataUnidades.filter(u => u.empresaId === empresaId));
                 setChoferes(dataChoferes.filter(c => c.empresaId === empresaId));
-                setEmpleados(dataEmpleados.filter(e => e.empresaId === empresaId));
+                setEmpleados(dataEmpleados.filter((e: { empresaId: string | null; }) => e.empresaId === empresaId));
                 setOrdenes(dataOrdenes);
             } catch (error) {
                 console.error("❌ Error obteniendo datos:", error);
