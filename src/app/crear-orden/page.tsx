@@ -53,10 +53,10 @@ export default function CrearOrden() {
     const [importe, setImporte] = useState<string>("");
     const [tanqueLleno, setTanqueLleno] = useState<boolean>(false);
     const [condicionPago, setCondicionPago] = useState<"Cuenta Corriente" | "Pago Anticipado">("Cuenta Corriente");
-    // Estados nuevos para viáticos
     const [viaticosMonto, setViaticosMonto] = useState<string>("");
     const [viaticosMoneda, setViaticosMoneda] = useState<"ARS" | "USD" | "Gs">("ARS");
-    // const [fechaCarga, setFechaCarga] = useState<string>("");
+    const [empleados, setEmpleados] = useState<Chofer[]>([]);
+    const personas = [...choferes, ...empleados];
     const router = useRouter();
 
     useEffect(() => {
@@ -80,17 +80,21 @@ export default function CrearOrden() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [resOrdenes, resUnidades, resChoferes] = await Promise.all([
+                const [resOrdenes, resUnidades, resChoferes, resEmpleados] = await Promise.all([
                     fetch(`/api/ordenes?empresaId=${empresaId}`),
                     fetch(`/api/unidades`),
                     fetch(`/api/choferes`),
+                    fetch(`/api/empleados`)
                 ]);
+
+                const dataEmpleados = await resEmpleados.json();
                 const dataOrdenes: Orden[] = await resOrdenes.json();
                 const dataUnidades: Unidad[] = await resUnidades.json();
                 const dataChoferes: Chofer[] = await resChoferes.json();
 
                 setUnidades(dataUnidades.filter(u => u.empresaId === empresaId));
                 setChoferes(dataChoferes.filter(c => c.empresaId === empresaId));
+                setEmpleados(dataEmpleados.filter(e => e.empresaId === empresaId));
                 setOrdenes(dataOrdenes);
             } catch (error) {
                 console.error("❌ Error obteniendo datos:", error);
@@ -205,7 +209,7 @@ export default function CrearOrden() {
             <div className="flex flex-col rounded-md p-6 bg-white border-2 border-black">
                 <h2 className="text-2xl font-bold">Crear Orden</h2>
                 <form onSubmit={handleCrearOrden} className="p-4">
-                    
+
                     <label className="block font-semibold">Unidad</label>
                     <select
                         className="w-full p-2 border rounded mb-2"
@@ -220,16 +224,17 @@ export default function CrearOrden() {
                         ))}
                     </select>
 
-                    <label className="block font-semibold">Chofer</label>
+                    {/* <label className="block font-semibold">Chofer</label> */}
+                    <label className="block font-semibold">Chofer/Empleado</label>
                     <select
                         className="w-full p-2 border rounded mb-2"
                         value={selectedChofer}
                         onChange={(e) => setSelectedChofer(e.target.value)}
                     >
-                        <option value="">Seleccionar chofer</option>
-                        {choferes.map((chofer) => (
-                            <option key={chofer._id} value={chofer._id}>
-                                {chofer.nombre} (DNI: {chofer.documento})
+                        <option value="">Seleccionar chofer o empleado</option>
+                        {personas.map((persona) => (
+                            <option key={persona._id} value={persona._id}>
+                                {persona.nombre} (DNI: {persona.documento})
                             </option>
                         ))}
                     </select>
