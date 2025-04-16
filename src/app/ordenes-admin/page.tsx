@@ -192,108 +192,102 @@ export default function OrdenesAdmin() {
                 </div>
 
                 {/* Lista de Órdenes */}
-                <div className="mt-4 relative flex flex-col border border-gray-400 rounded">
-                    <ul className="max-h-96 overflow-y-auto">
-                        {ordenesOrdenadas.map((orden) => (
-                            <li
-                                key={orden._id}
-                                className="border border-gray-300 p-4 rounded mb-2"
-                            >
-                                <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
-                                    {orden.codigoOrden}
-                                </p>
-                                <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
-                                <p className="text-gray-600 font-bold">
-                                    {orden.producto.replace(/_/g, " ")}
-                                </p>
+                <div className="mt-4 relative flex flex-col border border-gray-200 rounded-lg shadow-sm bg-white">
+                    <ul className="max-h-[480px] overflow-y-auto divide-y divide-gray-100">
+                        {ordenesOrdenadas.map((orden) => {
 
-                                {orden.tanqueLleno ? (
-                                    <p className="text-gray-600 font-normal">
-                                        <strong>Tanque Lleno</strong>
-                                    </p>
-                                ) : orden.litros ? (
-                                    <p className="text-gray-600">
-                                        <strong>Litros:</strong> {orden.litros} L
-                                    </p>
-                                ) : orden.monto ? (
-                                    <p className="text-gray-600">
-                                        <strong>Monto:</strong> {orden.monto}
-                                    </p>
-                                ) : null}
-                                <p className="text-gray-600">
-                                    <strong>Pago:</strong> {orden.condicionPago}
-                                </p>
-                                {orden.choferId && (
-                                    <p className="text-gray-600">
-                                        <strong>Chofer:</strong> {orden.choferId.nombre} (
-                                        {orden.choferId.documento})
-                                    </p>
-                                )}
-                                {orden.unidadId && (
-                                    <p className="text-gray-600">
-                                        <strong>Matrícula:</strong> {orden.unidadId.matricula}
-                                    </p>
-                                )}
-                                {orden.playeroId &&
-                                    typeof orden.playeroId !== "string" && (
+                            return (
+                                <li
+                                    key={orden._id}
+                                    className={`p-4 mb-2 bg-white hover:bg-gray-50 transition-all border-l-4iuxu rounded-md shadow-sm`}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <p className="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded">
+                                            {orden.codigoOrden}
+                                        </p>
+                                        <span
+                                            className={`text-sm font-bold ${orden.estado === "PENDIENTE_AUTORIZACION"
+                                                ? "text-yellow-600"
+                                                : orden.estado === "AUTORIZADA"
+                                                    ? "text-green-600"
+                                                    : "text-red-600"
+                                                }`}
+                                        >
+                                            {orden.estado.replace(/_/g, " ")}
+                                        </span>
+                                    </div>
+
+                                    <h3 className="text-lg font-bold mt-1">{orden.empresaId.nombre}</h3>
+                                    <p className="text-gray-700 font-semibold">{orden.producto.replace(/_/g, " ")}</p>
+
+                                    {orden.tanqueLleno ? (
+                                        <p className="text-gray-600"><strong>Tanque Lleno</strong></p>
+                                    ) : orden.litros ? (
+                                        <p className="text-gray-600"><strong>Litros:</strong> {orden.litros} L</p>
+                                    ) : orden.monto ? (
+                                        <p className="text-gray-600"><strong>Monto:</strong> {orden.monto}</p>
+                                    ) : null}
+
+                                    <p className="text-gray-600"><strong>Pago:</strong> {orden.condicionPago}</p>
+
+                                    {orden.choferId && (
                                         <p className="text-gray-600">
-                                            <strong>Playero:</strong> {orden.playeroId.nombre} (
-                                            {orden.playeroId.documento})
+                                            <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
                                         </p>
                                     )}
-                                <p className="text-gray-600">
-                                    <strong>Fecha Emisión:</strong>{" "}
-                                    {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
-                                </p>
-                                {orden.fechaCarga && (
-                                    <p className="text-gray-600">
-                                        <strong>Fecha Carga:</strong>{" "}
-                                        {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
-                                    </p>
-                                )}
-                                {orden.viaticos && orden.viaticos.monto != null && (
-                                    <p className="text-gray-600">
-                                        <strong>Viáticos:</strong> {orden.viaticos.monto}{" "}
-                                        {orden.viaticos.moneda}
-                                    </p>
-                                )}
-                                <p
-                                    className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION"
-                                            ? "text-yellow-600"
-                                            : orden.estado === "AUTORIZADA"
-                                                ? "text-green-600"
-                                                : "text-red-600"
-                                        }`}
-                                >
-                                    {orden.estado.replace(/_/g, " ")}
-                                </p>
-                                {/* Botones de acción */}
-                                <div className="flex gap-2 mt-2">
-                                    {orden.estado === "PENDIENTE_AUTORIZACION" && (
-                                        <button
-                                            onClick={() =>
-                                                actualizarEstado(orden._id, "AUTORIZADA")
-                                            }
-                                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                                        >
-                                            Autorizar
-                                        </button>
+
+                                    {orden.unidadId && (
+                                        <p className="text-gray-600">
+                                            <strong>Matrícula:</strong> {orden.unidadId.matricula}
+                                        </p>
                                     )}
-                                    {orden.estado === "AUTORIZADA" && (
-                                        <button
-                                            onClick={() =>
-                                                actualizarEstado(orden._id, "CARGADA")
-                                            }
-                                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                                        >
-                                            Finalizar
-                                        </button>
+
+                                    {orden.playeroId && typeof orden.playeroId !== "string" && (
+                                        <p className="text-gray-600">
+                                            <strong>Playero:</strong> {orden.playeroId.nombre} ({orden.playeroId.documento})
+                                        </p>
                                     )}
-                                </div>
-                            </li>
-                        ))}
+
+                                    <p className="text-gray-600">
+                                        <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
+                                    </p>
+
+                                    {orden.fechaCarga && (
+                                        <p className="text-gray-600">
+                                            <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
+                                        </p>
+                                    )}
+
+                                    {orden.viaticos?.monto != null && (
+                                        <p className="text-gray-600">
+                                            <strong>Viáticos:</strong> {orden.viaticos.monto} {orden.viaticos.moneda}
+                                        </p>
+                                    )}
+
+                                    <div className="flex gap-2 mt-4">
+                                        {orden.estado === "PENDIENTE_AUTORIZACION" && (
+                                            <button
+                                                onClick={() => actualizarEstado(orden._id, "AUTORIZADA")}
+                                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-semibold transition"
+                                            >
+                                                Autorizar
+                                            </button>
+                                        )}
+                                        {orden.estado === "AUTORIZADA" && (
+                                            <button
+                                                onClick={() => actualizarEstado(orden._id, "CARGADA")}
+                                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-md text-sm font-semibold transition"
+                                            >
+                                                Finalizar
+                                            </button>
+                                        )}
+                                    </div>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
+
             </div>
         </div>
     );

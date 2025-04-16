@@ -164,88 +164,101 @@ export default function Ordenes() {
                 </div>
 
                 {/* Filtros */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                    {/* 🔍 Buscador Principal */}
-                    <div className="relative flex items-center border border-gray-400 rounded col-span-full">
-                        <input
-                            type="text"
-                            placeholder="Buscar por matrícula, chofer o DNI"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="p-2 pr-10 w-full rounded outline-none"
-                        />
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="w-5 h-5 text-gray-600 absolute right-3"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                        </svg>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                    {/* 🔍 Buscador */}
+                    <div className="col-span-full relative">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Buscar</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Buscar por matrícula, chofer o DNI"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 outline-none"
+                            />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.5"
+                                stroke="currentColor"
+                                className="w-5 h-5 text-gray-500 absolute right-3 top-2.5"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
+                        </div>
                     </div>
 
-                    {/* 📅 Filtro Fecha de Emisión */}
+                    {/* 📅 Fecha de Emisión */}
                     <div className="flex flex-col">
-                        <label className="font-semibold">Fecha de Emisión</label>
+                        <label className="text-sm font-semibold text-gray-700 mb-1">Fecha de Emisión</label>
                         <input
                             type="date"
                             value={filtroFechaEmision}
                             onChange={(e) => setFiltroFechaEmision(e.target.value)}
-                            className="p-2 border border-gray-400 rounded"
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 outline-none"
                         />
                     </div>
 
-                    {/* 📅 Filtro Fecha de Carga */}
+                    {/* 📅 Fecha de Carga */}
                     <div className="flex flex-col">
-                        <label className="font-semibold">Fecha de Carga</label>
+                        <label className="text-sm font-semibold text-gray-700 mb-1">Fecha de Carga</label>
                         <input
                             type="date"
                             value={filtroFechaCarga}
                             onChange={(e) => setFiltroFechaCarga(e.target.value)}
-                            className="p-2 border border-gray-400 rounded"
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 outline-none"
                         />
                     </div>
 
-                    {/* 📌 Selector de Producto */}
-                    <select
-                        value={filtroProducto}
-                        onChange={(e) => setFiltroProducto(e.target.value)}
-                        className="p-2 border border-gray-400 rounded"
-                    >
-                        <option value="">Todos los Productos</option>
-                        <option value="GASOIL_G2">Gasoil G2</option>
-                        <option value="GASOIL_G3">Gasoil G3</option>
-                        <option value="NAFTA_SUPER">Nafta Súper</option>
-                        <option value="NAFTA_ECO">Nafta Eco</option>
-                    </select>
+                    {/* ⛽ Producto */}
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-1">Producto</label>
+                        <select
+                            value={filtroProducto}
+                            onChange={(e) => setFiltroProducto(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 outline-none"
+                        >
+                            <option value="">Todos</option>
+                            <option value="GASOIL_G2">Gasoil G2</option>
+                            <option value="GASOIL_G3">Gasoil G3</option>
+                            <option value="NAFTA_SUPER">Nafta Súper</option>
+                            <option value="NAFTA_ECO">Nafta Eco</option>
+                        </select>
+                    </div>
 
-                    {/* 🚦 Selector de Estado */}
-                    <select
-                        value={filtroEstado}
-                        onChange={(e) => setFiltroEstado(e.target.value)}
-                        className="p-2 border border-gray-400 rounded"
-                    >
-                        <option value="">Todos los Estados</option>
-                        <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
-                        <option value="AUTORIZADA">Pendiente de Carga</option>
-                        <option value="CARGADA">Cargada</option>
-                    </select>
+                    {/* 🚦 Estado */}
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-1">Estado</label>
+                        <select
+                            value={filtroEstado}
+                            onChange={(e) => setFiltroEstado(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 outline-none"
+                        >
+                            <option value="">Todos los Estados</option>
+                            <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
+                            <option value="AUTORIZADA">Pendiente de Carga</option>
+                            <option value="CARGADA">Cargada</option>
+                        </select>
+                    </div>
 
-                    {/* 🔄 Botón para limpiar filtros */}
-                    <button
-                        onClick={() => {
-                            setFiltroProducto("");
-                            setFiltroEstado("");
-                            setFiltroFechaCarga("");
-                            setFiltroFechaEmision("");
-                        }}
-                        className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-md w-fit text-sm"
-                    >
-                        Limpiar Filtros
-                    </button>
+                    {/* ❌ Limpiar Filtros */}
+                    <div className="flex items-end">
+                        <button
+                            onClick={() => {
+                                setFiltroProducto("");
+                                setFiltroEstado("");
+                                setFiltroFechaCarga("");
+                                setFiltroFechaEmision("");
+                                setSearchTerm("");
+                            }}
+                            className="mt-auto px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-all"
+                        >
+                            Limpiar Filtros
+                        </button>
+                    </div>
                 </div>
+
 
                 {ordenes.length === 0 ? (
                     <p className="text-gray-600 text-center">No hay órdenes registradas.</p>
@@ -253,71 +266,82 @@ export default function Ordenes() {
                     <div className="relative flex flex-col col-span-2">
                         <ul className="max-h-96 overflow-y-auto">
                             {ordenesOrdenadas.map((orden) => (
-                                <li key={orden._id} className="border border-gray-400 p-4 rounded mt-2 bg-white flex-shrink-0">
-                                    <p className="text-gray-600 font-normal rounded border w-fit p-0.5 bg-gray-200">
-                                        {orden.codigoOrden}
-                                    </p>
-                                    <p className="text-lg font-bold">{orden.empresaId.nombre}</p>
-                                    <p className="text-gray-600 font-bold">
+                                <li
+                                    key={orden._id}
+                                    className="bg-white rounded-lg shadow-md p-5 mb-4 border-l-4 transition-all duration-200 border-green-600 hover:border-green-700 hover:shadow-lg">
+                                    {/* Header: Código y Estado */}
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                            {orden.codigoOrden}
+                                        </span>
+                                        <span
+                                            className={`text-xs font-semibold uppercase tracking-wider ${orden.estado === "PENDIENTE_AUTORIZACION"
+                                                ? "text-yellow-600"
+                                                : orden.estado === "AUTORIZADA"
+                                                    ? "text-green-600"
+                                                    : "text-red-600"
+                                                }`}
+                                        >
+                                            {orden.estado.replace(/_/g, " ")}
+                                        </span>
+                                    </div>
+
+                                    {/* Empresa + Producto */}
+                                    <h3 className="text-lg font-bold text-gray-800">{orden.empresaId.nombre}</h3>
+                                    <p className="text-sm font-semibold text-gray-600 mb-2">
                                         {orden.producto.replace(/_/g, " ")}
                                     </p>
 
-                                    {orden.tanqueLleno ? (
-                                        <p className="text-gray-600 font-normal">
-                                            <strong>Tanque Lleno</strong>
-                                        </p>
-                                    ) : orden.litros ? (
-                                        <p className="text-gray-600">
-                                            <strong>Litros:</strong> {orden.litros} L
-                                        </p>
-                                    ) : orden.monto ? (
-                                        <p className="text-gray-600">
-                                            <strong>Monto:</strong> {orden.monto}
-                                        </p>
-                                    ) : null}
-                                    <p className="text-gray-600">
-                                        <strong>Pago: </strong> {orden.condicionPago}
-                                    </p>
-                                    {orden.choferId && (
-                                        <p className="text-gray-600">
-                                            <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
-                                        </p>
-                                    )}
-                                    {orden.unidadId && (
-                                        <p className="text-gray-600">
-                                            <strong>Matrícula:</strong> {orden.unidadId.matricula}
-                                        </p>
-                                    )}
-                                    {orden.playeroId && typeof orden.playeroId !== "string" && (
-                                        <p className="text-gray-600">
-                                            <strong>Playero:</strong> {orden.playeroId.nombre} ({orden.playeroId.documento})
-                                        </p>
-                                    )}
-                                    <p className="text-gray-600">
-                                        <strong>Fecha Emisión:</strong> {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
-                                    </p>
-                                    {orden.fechaCarga && (
-                                        <p className="text-gray-600">
-                                            <strong>Fecha Carga:</strong> {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
-                                        </p>
-                                    )}
-                                    {orden.viaticos && orden.viaticos.monto != null && (
-                                        <p className="text-gray-600">
-                                            <strong>Viáticos:</strong> {orden.viaticos.monto} {orden.viaticos.moneda}
-                                        </p>
-                                    )}
+                                    {/* Cuerpo de detalles */}
+                                    <div className="text-sm text-gray-700 space-y-1">
+                                        {orden.tanqueLleno ? (
+                                            <p><strong>Tanque:</strong> Lleno</p>
+                                        ) : orden.litros ? (
+                                            <p><strong>Litros:</strong> {orden.litros} L</p>
+                                        ) : orden.monto ? (
+                                            <p><strong>Monto:</strong> {orden.monto}</p>
+                                        ) : null}
 
-                                    <p
-                                        className={`text-sm font-bold mt-2 ${orden.estado === "PENDIENTE_AUTORIZACION"
-                                            ? "text-yellow-600"
-                                            : orden.estado === "AUTORIZADA"
-                                                ? "text-green-600"
-                                                : "text-red-600"
-                                            }`}
-                                    >
-                                        {orden.estado}
-                                    </p>
+                                        <p><strong>Pago:</strong> {orden.condicionPago}</p>
+
+                                        {orden.choferId && (
+                                            <p>
+                                                <strong>Chofer:</strong> {orden.choferId.nombre} ({orden.choferId.documento})
+                                            </p>
+                                        )}
+
+                                        {orden.unidadId && (
+                                            <p>
+                                                <strong>Matrícula:</strong> {orden.unidadId.matricula}
+                                            </p>
+                                        )}
+
+                                        {orden.playeroId && typeof orden.playeroId !== "string" && (
+                                            <p>
+                                                <strong>Playero:</strong> {orden.playeroId.nombre} ({orden.playeroId.documento})
+                                            </p>
+                                        )}
+
+                                        <p>
+                                            <strong>Fecha Emisión:</strong>{" "}
+                                            {new Date(orden.fechaEmision).toLocaleDateString("es-AR")}
+                                        </p>
+
+                                        {orden.fechaCarga && (
+                                            <p>
+                                                <strong>Fecha Carga:</strong>{" "}
+                                                {new Date(orden.fechaCarga).toLocaleDateString("es-AR")}
+                                            </p>
+                                        )}
+
+                                        {orden.viaticos?.monto != null && (
+                                            <p>
+                                                <strong>Viáticos:</strong> {orden.viaticos.monto} {orden.viaticos.moneda}
+                                            </p>
+                                        )}
+                                    </div>
                                 </li>
+
                             ))}
                         </ul>
                     </div>
