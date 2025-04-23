@@ -132,14 +132,14 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
     try {
         await connectMongoDB();
-        const { id, nuevoEstado, litros, ubicacion } = await req.json();
+        const { id, nuevoEstado, litros, litrosCargados, ubicacion } = await req.json();
 
         if (!mongoose.isValidObjectId(id)) {
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
         // Para finalizar carga, requerimos litros y ubicación
-        if (nuevoEstado === "CARGADA" && litros && ubicacion) {
+        if (nuevoEstado === "CARGADA" && (litros || litrosCargados) && ubicacion) {
             const orden = await Orden.findById(id);
             if (!orden) {
                 return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
@@ -177,7 +177,8 @@ export async function PATCH(req: Request) {
 
                 // Actualizamos la orden original con los litros cargados y asignamos fechaCarga y ubicación
                 orden.estado = "CARGADA";
-                orden.litros = litros;
+                orden.litrosCargados = litrosCargados; // ✅ usamos los litros reales cargados
+                orden.litros = orden.litros ?? litrosCargados; // mantené el original si existía
                 orden.importe = undefined;
                 orden.tanqueLleno = false;
                 orden.playeroId = playeroId;
@@ -214,9 +215,9 @@ export async function PATCH(req: Request) {
                     .lean();
                 return NextResponse.json({ ordenActualizada, nuevaOrden: nuevaOrdenActual });
             } else {
-                // Actualización normal: si no hay diferencia o la orden no fue por litros
                 orden.estado = "CARGADA";
-                orden.litros = litros;
+                orden.litrosCargados = litrosCargados ?? litros; // ✅ USA litrosCargados si viene
+                orden.litros = orden.litros ?? litrosCargados ?? litros; // mantiene el original si existe
                 orden.importe = undefined;
                 orden.tanqueLleno = false;
                 orden.playeroId = playeroId;

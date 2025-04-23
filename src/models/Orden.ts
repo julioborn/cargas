@@ -11,9 +11,9 @@ const OrdenSchema = new mongoose.Schema({
 
     tanqueLleno: { type: Boolean, default: false },
     litros: { type: Number, default: null, required: false },
+    litrosCargados: { type: Number, default: null, required: false },
     importe: { type: Number, default: null, required: false },
 
-    // Nuevo campo viáticos: monto y moneda
     viaticos: {
         monto: { type: Number, default: null },
         moneda: { type: String, enum: ["ARS", "USD", "Gs"], default: "ARS" }

@@ -235,7 +235,7 @@ export default function Ordenes() {
                             onChange={(e) => setFiltroEstado(e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 outline-none"
                         >
-                            <option value="">Todos los Estados</option>
+                            <option value="">Todos</option>
                             <option value="PENDIENTE_AUTORIZACION">Pendiente de Autorización</option>
                             <option value="AUTORIZADA">Pendiente de Carga</option>
                             <option value="CARGADA">Cargada</option>

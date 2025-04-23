@@ -31,6 +31,7 @@ interface Orden {
     producto: string;
     tanqueLleno: boolean;
     litros?: number;
+    litrosCargados?: number;
     monto?: number;
     estado: string;
     fechaEmision: string;
@@ -223,10 +224,19 @@ export default function OrdenesAdmin() {
                                     {orden.tanqueLleno ? (
                                         <p className="text-gray-600"><strong>Tanque Lleno</strong></p>
                                     ) : orden.litros ? (
-                                        <p className="text-gray-600"><strong>Litros:</strong> {orden.litros} L</p>
+                                        <p className="text-gray-600"><strong>Litros Solicitados:</strong> {orden.litros} L</p>
                                     ) : orden.monto ? (
                                         <p className="text-gray-600"><strong>Monto:</strong> {orden.monto}</p>
                                     ) : null}
+
+                                    {orden.estado === "CARGADA" && orden.litrosCargados !== undefined && (
+                                        <p className="text-gray-600">
+                                            <strong>Litros Cargados:</strong> {orden.litrosCargados} L
+                                            {orden.litros !== undefined && orden.litrosCargados > orden.litros && (
+                                                <span className="text-sm text-yellow-600 ml-2">(superó lo solicitado)</span>
+                                            )}
+                                        </p>
+                                    )}
 
                                     <p className="text-gray-600"><strong>Pago:</strong> {orden.condicionPago}</p>
 

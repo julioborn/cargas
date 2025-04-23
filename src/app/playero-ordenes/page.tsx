@@ -110,11 +110,6 @@ export default function PlayeroOrdenes() {
                         return false;
                     }
 
-                    if (!orden.tanqueLleno && orden.litros && litros > orden.litros) {
-                        Swal.showValidationMessage(`No puedes cargar más de ${orden.litros} litros`);
-                        return false;
-                    }
-
                     return { ubicacion, litros };
                 }
             });
@@ -124,7 +119,12 @@ export default function PlayeroOrdenes() {
                 const res = await fetch("/api/ordenes", {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: orden._id, nuevoEstado: "CARGADA", ubicacion, litros }),
+                    body: JSON.stringify({
+                        id: orden._id,
+                        nuevoEstado: "CARGADA",
+                        ubicacion,
+                        litrosCargados: litros
+                    })
                 });
                 if (res.ok) {
                     Swal.fire("Actualizado", "La orden ha sido CARGADA.", "success");
@@ -139,7 +139,6 @@ export default function PlayeroOrdenes() {
         }
     };
 
-    // Función para verificar tanto choferes como empleados
     const verifyPersona = async () => {
         const { value: dni } = await Swal.fire({
             title: "Verificar Chofer/Empleado",
