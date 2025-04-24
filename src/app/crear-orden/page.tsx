@@ -153,7 +153,7 @@ export default function CrearOrden() {
 
         const data = await res.json();
         console.log("📥 Respuesta de la API:", data);
-        if (res.ok) {
+        if (res.ok && !data.error) {
             setOrdenes([...ordenes, data]);
             Swal.fire("¡Orden Creada!", "La orden ha sido registrada correctamente.", "success")
                 .then(() => {
@@ -168,7 +168,7 @@ export default function CrearOrden() {
             setViaticosMonto("");
             setViaticosMoneda("ARS");
         } else {
-            Swal.fire("Error", "No se pudo registrar la orden", "error");
+            Swal.fire("Error", data.error || "No se pudo registrar la orden", "error");
         }
     };
 
@@ -238,14 +238,14 @@ export default function CrearOrden() {
                             </option>
                         ))}
                     </select>
-                    {selectedChofer && (
+                    {/* {selectedChofer && (
                         <p className="text-sm text-gray-600 mb-2">
                             Chofer seleccionado automáticamente:{" "}
                             {
                                 choferes.find((c) => c._id === selectedChofer)?.nombre
                             }
                         </p>
-                    )}
+                    )} */}
 
                     <label className="block font-semibold">Producto</label>
                     <select className="w-full p-2 border rounded mb-2" value={selectedProducto} onChange={(e) => setSelectedProducto(e.target.value)}>

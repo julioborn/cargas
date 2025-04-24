@@ -268,7 +268,15 @@ export default function Ordenes() {
                             {ordenesOrdenadas.map((orden) => (
                                 <li
                                     key={orden._id}
-                                    className="bg-white rounded-lg shadow-md p-5 mb-4 border-l-4 transition-all duration-200 border-green-600 hover:border-green-700 hover:shadow-lg">
+                                    className={`bg-white rounded-lg shadow-md p-5 mb-4 border-l-4 transition-all duration-200 hover:shadow-lg
+                                    ${orden.estado === "PENDIENTE_AUTORIZACION"
+                                            ? "border-yellow-600 hover:border-yellow-700"
+                                            : orden.estado === "AUTORIZADA"
+                                                ? "border-green-600 hover:border-green-700"
+                                                : "border-red-600 hover:border-red-700"
+                                        }
+                                `}
+                                >
                                     {/* Header: Código y Estado */}
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
