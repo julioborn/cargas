@@ -31,6 +31,7 @@ interface Orden {
     producto: string;
     tanqueLleno: boolean;
     litros?: number;
+    litrosCargados?: number;
     monto?: number;
     estado: string;
     fechaEmision: string;
@@ -309,6 +310,15 @@ export default function Ordenes() {
                                         ) : orden.monto ? (
                                             <p><strong>Monto:</strong> {orden.monto}</p>
                                         ) : null}
+
+                                        {orden.estado === "CARGADA" && orden.litrosCargados != null && (
+                                            <p>
+                                                <strong>Litros Cargados:</strong> {orden.litrosCargados} L
+                                                {orden.litros != null && orden.litrosCargados > orden.litros && (
+                                                    <span className="text-sm text-yellow-600 ml-2">(Superó lo solicitado)</span>
+                                                )}
+                                            </p>
+                                        )}
 
                                         <p><strong>Pago:</strong> {orden.condicionPago}</p>
 

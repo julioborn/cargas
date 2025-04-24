@@ -233,7 +233,7 @@ export default function OrdenesAdmin() {
                                         <p className="text-gray-600">
                                             <strong>Litros Cargados:</strong> {orden.litrosCargados} L
                                             {orden.litros !== undefined && orden.litrosCargados > orden.litros && (
-                                                <span className="text-sm text-yellow-600 ml-2">(superó lo solicitado)</span>
+                                                <span className="text-sm text-yellow-600 ml-2">(Superó lo solicitado)</span>
                                             )}
                                         </p>
                                     )}
@@ -283,14 +283,14 @@ export default function OrdenesAdmin() {
                                                 Autorizar
                                             </button>
                                         )}
-                                        {orden.estado === "AUTORIZADA" && (
+                                        {/* {orden.estado === "AUTORIZADA" && (
                                             <button
                                                 onClick={() => actualizarEstado(orden._id, "CARGADA")}
                                                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-md text-sm font-semibold transition"
                                             >
                                                 Finalizar
                                             </button>
-                                        )}
+                                        )} */}
                                     </div>
                                 </li>
                             );
