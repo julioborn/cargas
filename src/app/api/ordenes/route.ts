@@ -10,6 +10,9 @@ import "@/models/Ubicacion"; // Para registrar el modelo Ubicacion
 import { connectMongoDB } from "@/lib/mongodb";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { customAlphabet } from "nanoid";
+
+const generateCodigoOrden = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 6);
 
 export async function GET(req: Request) {
     try {
@@ -187,6 +190,7 @@ export async function PATCH(req: Request) {
 
                 await orden.save();
 
+                // 👇 Creamos nueva orden para la diferencia
                 const nuevaOrden = new Orden({
                     empresaId: orden.empresaId,
                     unidadId: orden.unidadId,
@@ -198,7 +202,7 @@ export async function PATCH(req: Request) {
                     condicionPago: orden.condicionPago,
                     fechaEmision: new Date(),
                     estado: "PENDIENTE_AUTORIZACION",
-                    codigoOrden: nanoid(6).replace(/[^A-Z0-9]/g, ""),
+                    codigoOrden: generateCodigoOrden(), // ✅ Código correcto
                 });
                 await nuevaOrden.save();
 
@@ -231,7 +235,7 @@ export async function PATCH(req: Request) {
             }
         }
 
-        // Cambios de estado simples
+        // 🚦 Cambios de estado simples
         const estadosValidos = ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "CARGADA"];
         if (!estadosValidos.includes(nuevoEstado)) {
             return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
