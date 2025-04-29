@@ -134,59 +134,59 @@ export async function PATCH(req: Request) {
         await connectMongoDB();
         const { id, nuevoEstado, litros, litrosCargados, ubicacion } = await req.json();
 
+        console.log("📦 PATCH recibido:", { id, nuevoEstado, litros, litrosCargados, ubicacion });
+
         if (!mongoose.isValidObjectId(id)) {
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        // Para finalizar carga, requerimos litros y ubicación
-        if (nuevoEstado === "CARGADA" && (litros || litrosCargados) && ubicacion) {
-            const orden = await Orden.findById(id);
-            if (!orden) {
-                return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
-            }
+        const orden = await Orden.findById(id);
+        if (!orden) {
+            return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+        }
+
+        if (nuevoEstado === "CARGADA" && (litrosCargados || litros) && ubicacion) {
             if (orden.estado !== "AUTORIZADA") {
-                return NextResponse.json(
-                    { error: "Solo se puede actualizar una orden autorizada" },
-                    { status: 400 }
-                );
+                return NextResponse.json({ error: "Solo se puede actualizar una orden autorizada" }, { status: 400 });
             }
 
-            // Obtenemos el token para saber quién es el playero
             const token = await getToken({
                 req: req as NextRequest,
                 secret: process.env.NEXTAUTH_SECRET,
                 secureCookie: process.env.NODE_ENV === "production",
             });
+
             if (!token) {
                 return NextResponse.json({ error: "No se pudo identificar el playero" }, { status: 401 });
             }
-            // Suponemos que token.id es el id del playero
+
             const playeroId = token.id;
 
-            // Buscamos la ubicación en la colección Ubicacion
             const { default: Ubicacion } = await import("@/models/Ubicacion");
-            const ubicacionDoc = await Ubicacion.findOne({ _id: ubicacion });
+            const ubicacionDoc = await Ubicacion.findById(ubicacion);
             if (!ubicacionDoc) {
                 return NextResponse.json({ error: "Ubicación no encontrada" }, { status: 404 });
             }
 
-            // Si la orden fue creada con litros y se cargaron menos de lo solicitado,
-            // se genera una nueva orden con la diferencia.
-            if (orden.litros !== undefined && orden.litros > litros) {
-                const diferencia = orden.litros - litros;
+            const litrosSolicitados = orden.litros ?? 0;
+            const litrosReales = litrosCargados ?? litros ?? 0;
 
-                // Actualizamos la orden original con los litros cargados y asignamos fechaCarga y ubicación
-                orden.estado = "CARGADA";
-                orden.litrosCargados = litrosCargados; // ✅ usamos los litros reales cargados
-                orden.litros = orden.litros ?? litrosCargados; // mantené el original si existía
-                orden.importe = undefined;
-                orden.tanqueLleno = false;
-                orden.playeroId = playeroId;
-                orden.fechaCarga = new Date();
-                orden.ubicacionId = ubicacionDoc._id;
+            console.log("🧪 Comparando litros solicitados vs cargados:", litrosSolicitados, litrosReales);
+
+            orden.estado = "CARGADA";
+            orden.litrosCargados = litrosReales;
+            orden.importe = undefined;
+            orden.tanqueLleno = false;
+            orden.playeroId = playeroId;
+            orden.fechaCarga = new Date();
+            orden.ubicacionId = ubicacionDoc._id;
+
+            if (litrosSolicitados > litrosReales) {
+                const diferencia = litrosSolicitados - litrosReales;
+                orden.litros = litrosSolicitados;
+
                 await orden.save();
 
-                // Creamos una nueva orden para la diferencia
                 const nuevaOrden = new Orden({
                     empresaId: orden.empresaId,
                     unidadId: orden.unidadId,
@@ -208,49 +208,49 @@ export async function PATCH(req: Request) {
                     .populate("playeroId", "nombre documento")
                     .populate("ubicacionId", "nombre")
                     .lean();
+
                 const nuevaOrdenActual = await Orden.findById(nuevaOrden._id)
                     .populate("unidadId", "matricula")
                     .populate("choferId", "nombre documento")
                     .populate("ubicacionId", "nombre")
                     .lean();
+
                 return NextResponse.json({ ordenActualizada, nuevaOrden: nuevaOrdenActual });
             } else {
-                orden.estado = "CARGADA";
-                orden.litrosCargados = litrosCargados ?? litros; // ✅ USA litrosCargados si viene
-                orden.litros = orden.litros ?? litrosCargados ?? litros; // mantiene el original si existe
-                orden.importe = undefined;
-                orden.tanqueLleno = false;
-                orden.playeroId = playeroId;
-                orden.fechaCarga = new Date();
-                orden.ubicacionId = ubicacionDoc._id;
+                orden.litros = litrosSolicitados;
                 await orden.save();
+
                 const ordenActualizada = await Orden.findById(id)
                     .populate("unidadId", "matricula")
                     .populate("choferId", "nombre documento")
                     .populate("playeroId", "nombre documento")
                     .populate("ubicacionId", "nombre")
                     .lean();
+
                 return NextResponse.json(ordenActualizada);
             }
-        } else {
-            // Para otros cambios de estado sin finalizar carga
-            const estadosValidos = ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "CARGADA"];
-            if (!estadosValidos.includes(nuevoEstado)) {
-                return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
-            }
-            const ordenActualizada = await Orden.findByIdAndUpdate(
-                id,
-                { estado: nuevoEstado },
-                { new: true }
-            )
-                .populate("unidadId", "matricula")
-                .populate("choferId", "nombre documento")
-                .lean();
-            if (!ordenActualizada) {
-                return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
-            }
-            return NextResponse.json(ordenActualizada);
         }
+
+        // Cambios de estado simples
+        const estadosValidos = ["PENDIENTE_AUTORIZACION", "AUTORIZADA", "CARGADA"];
+        if (!estadosValidos.includes(nuevoEstado)) {
+            return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
+        }
+
+        const ordenActualizada = await Orden.findByIdAndUpdate(
+            id,
+            { estado: nuevoEstado },
+            { new: true }
+        )
+            .populate("unidadId", "matricula")
+            .populate("choferId", "nombre documento")
+            .lean();
+
+        if (!ordenActualizada) {
+            return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+        }
+
+        return NextResponse.json(ordenActualizada);
     } catch (error) {
         console.error("❌ Error actualizando orden:", error);
         return NextResponse.json({ error: "Error actualizando orden" }, { status: 500 });

@@ -37,7 +37,6 @@ export default function RootLayout({
       <html lang="es">
         <head>
           <link rel="manifest" href="/manifest.json" />
-          {/* ✅ Mantenemos `theme-color` aquí dentro de `<head>` */}
           <meta name="theme-color" content="#000000" />
         </head>
         <body className={`${inter.variable} antialiased`}>
