@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: "App para gestionar órdenes de carga",
   icons: {
     icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    apple: "icons/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
 };
